@@ -4,16 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP
+namespace CSDTP.Udp
 {
-    internal class Sender
+    internal class UdpReceiver
     {
-
-
-
-        public bool Send()
-        {
-
-        }
     }
 }

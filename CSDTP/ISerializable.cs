@@ -8,9 +8,8 @@ namespace CSDTP
 {
     public interface ISerializable<T>
     {
-        public void Serialize(StreamWriter writer);
+        public void Serialize(BinaryWriter writer);
 
-
-        public static abstract T Deserialize(StreamReader reader);
+        public static abstract T Deserialize(BinaryReader reader);
     }
 }

@@ -9,14 +9,22 @@ namespace Test
 {
     internal class Message : ISerializable<Message>
     {
-        public static Message Deserialize(StreamReader reader)
+        public string Text { get; }
+        public Message(string text)
         {
-            throw new NotImplementedException();
+            Text = text;
         }
 
-        public void Serialize(StreamWriter writer)
+
+
+        public static Message Deserialize(BinaryReader reader)
         {
-            throw new NotImplementedException();
+           return new Message(reader.ReadString());
+        }
+
+        public void Serialize(BinaryWriter writer)
+        {
+            writer.Write(Text);
         }
     }
 }

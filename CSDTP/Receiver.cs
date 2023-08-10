@@ -6,22 +6,18 @@ using System.Threading.Tasks;
 
 namespace CSDTP
 {
-    internal class Receiver : IDisposable
+    internal  abstract class BaseReceiver : IDisposable
     {
-        public void Dispose()
+        public int Port { get; }
+        public BaseReceiver(int port) 
         {
-            throw new NotImplementedException();
+            Port = port;
         }
 
-        public void Start()
-        {
+        public abstract void Dispose();
 
-        }
+        public abstract void Start();
 
-
-        public void Stop()
-        {
-
-        }
+        public abstract void Stop();
     }
 }

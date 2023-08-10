@@ -6,11 +6,15 @@ namespace Test
     {
         static void Main(string[] args)
         {
-            Notifier notificator = new Notifier();
+            //Notifier notificator = new Notifier();
 
-            notificator.Subscribe<Message>(Notificator);
-            notificator.Unsubscribe<Message>(Notificator);
+            //notificator.Subscribe<Message>(Notificator);
+            //notificator.Unsubscribe<Message>(Notificator);
+            var stream = new MemoryStream();
+            var packet = new Packet<Message>(new Message("FF"));
+            packet.Serialize(new BinaryWriter(stream));
 
+            
             Console.WriteLine("Hello, World!");
         }
 
