@@ -6,7 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Udp
+namespace CSDTP.Protocols.Udp
 {
     internal class UdpReceiver : BaseReceiver
     {
@@ -34,11 +34,7 @@ namespace CSDTP.Udp
                     if (!IsReceiving)
                         return;
 
-                    Task.Run(() =>
-                    {
-                        var packet = GetPacket(data.Buffer);
-                        OnDataAppear(packet);
-                    });
+                    ReceiverQueue.Enqueue(data.Buffer);
                 }
             });
         }
@@ -48,12 +44,6 @@ namespace CSDTP.Udp
             base.Stop();
         }
 
-        protected IPacket GetPacket(byte[] bytes)
-        {
-            using var reader = new BinaryReader(new MemoryStream(bytes));
-            var packet = (IPacket)Activator.CreateInstance(Type.GetType(reader.ReadString()));
-            packet.Deserialize(reader);
-            return packet;
-        }
+
     }
 }

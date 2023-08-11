@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Packets
 {
-    internal interface IPacket
+    public interface IPacket
     {
 
         public Type TypeOfPacket { get; }

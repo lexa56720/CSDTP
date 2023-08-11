@@ -6,9 +6,9 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Udp
+namespace CSDTP.Protocols.Udp
 {
-    internal class UdpSender : BaseSender
+    public class UdpSender : BaseSender
     {
         private UdpClient Client { get; set; }
         public UdpSender(IPEndPoint destination, int replyPort) : base(destination, replyPort)
@@ -25,10 +25,11 @@ namespace CSDTP.Udp
         public override async Task<bool> Send<T>(T data)
         {
             using var ms = new MemoryStream();
-            GetPacket(data).Serialize(new BinaryWriter(ms));
+            using var writer = new BinaryWriter(ms);
+            GetPacket(data).Serialize(writer);
             var bytes = ms.ToArray();
             var sended = await Client.SendAsync(bytes, bytes.Length);
-            return sended==bytes.Length;
+            return sended == bytes.Length;
         }
     }
 }

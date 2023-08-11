@@ -5,14 +5,14 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP
+namespace CSDTP.Protocols
 {
-    internal abstract class BaseSender: IDisposable 
+    public abstract class BaseSender : ISender
     {
         public IPEndPoint Destination { get; }
         public int ReplyPort { get; }
 
-        public BaseSender(IPEndPoint destination,int replyPort=-1)
+        public BaseSender(IPEndPoint destination, int replyPort = -1)
         {
             Destination = destination;
             ReplyPort = replyPort;

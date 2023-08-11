@@ -9,24 +9,25 @@ using System.Threading.Tasks;
 
 namespace CSDTP
 {
-    internal class Packet<T> : IPacket where T : ISerializable<T>
+    public class Packet<T> : IPacket where T : ISerializable<T>
     {
 
         public bool IsHasData;
 
         public T? Data;
 
-        public Type TypeOfPacket => throw new NotImplementedException();
+        public Type TypeOfPacket { get; private set; }
 
         public Packet(T data)
         {
             Data = data;
             IsHasData = true;
+            TypeOfPacket= typeof(Packet<T>);
         }
 
         public Packet()
         {
-
+            TypeOfPacket = typeof(Packet<T>);
         }
 
         public void Serialize(BinaryWriter writer)
