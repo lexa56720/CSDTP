@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace CSDTP
 {
-    internal abstract class BaseSender<T>: IDisposable where T : ISerializable<T>
+    internal abstract class BaseSender: IDisposable 
     {
         public IPEndPoint Destination { get; }
         public int ReplyPort { get; }
@@ -20,10 +20,10 @@ namespace CSDTP
 
         public abstract void Dispose();
 
-        public abstract Task<bool> Send(T data);
+        public abstract Task<bool> Send<T>(T data) where T : ISerializable<T>;
 
 
-        protected Packet<T> GetPacket(T data)
+        protected Packet<T> GetPacket<T>(T data) where T : ISerializable<T>
         {
             return new Packet<T>(data);
         }

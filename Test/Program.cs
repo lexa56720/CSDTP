@@ -14,7 +14,7 @@ namespace Test
             var packet = new Packet<Message>(new Message("FF"));
             packet.Serialize(new BinaryWriter(stream));
 
-            
+
             Console.WriteLine("Hello, World!");
         }
 

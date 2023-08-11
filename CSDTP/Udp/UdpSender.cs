@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Udp
 {
-    internal class UdpSender<T> : BaseSender<T> where T : ISerializable<T>
+    internal class UdpSender : BaseSender
     {
         private UdpClient Client { get; set; }
         public UdpSender(IPEndPoint destination, int replyPort) : base(destination, replyPort)
@@ -22,10 +22,10 @@ namespace CSDTP.Udp
             Client.Close();
         }
 
-        public override async Task<bool> Send(T data)
+        public override async Task<bool> Send<T>(T data)
         {
             using var ms = new MemoryStream();
-            data.Serialize(new BinaryWriter(ms));
+            GetPacket(data).Serialize(new BinaryWriter(ms));
             var bytes = ms.ToArray();
             var sended = await Client.SendAsync(bytes, bytes.Length);
             return sended==bytes.Length;

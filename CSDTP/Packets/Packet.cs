@@ -1,18 +1,22 @@
-﻿using System;
+﻿using CSDTP.Packets;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CSDTP
 {
-    public class Packet<T> : ISerializable<Packet<T>> where T : ISerializable<T>
+    internal class Packet<T> : IPacket where T : ISerializable<T>
     {
 
         public bool IsHasData;
 
         public T? Data;
+
+        public Type TypeOfPacket => throw new NotImplementedException();
 
         public Packet(T data)
         {
@@ -25,24 +29,20 @@ namespace CSDTP
 
         }
 
-        public static Packet<T> Deserialize(BinaryReader reader)
-        {
-            var type = Type.GetType(reader.ReadString());
-
-
-            var packet = new Packet<T>();
-            packet.IsHasData = reader.ReadBoolean();
-            if(packet.IsHasData)
-                packet.Data=T.Deserialize(reader);
-            return packet;
-        }
-
         public void Serialize(BinaryWriter writer)
         {
-            Console.WriteLine(typeof(Packet<T>).FullName);
+            writer.Write(typeof(Packet<T>).FullName);
             writer.Write(IsHasData);
             if (IsHasData)
                 Data.Serialize(writer);
+        }
+
+        public IPacket Deserialize(BinaryReader reader)
+        {
+            IsHasData = reader.ReadBoolean();
+            if (IsHasData)
+               Data = T.Deserialize(reader);
+            return this;
         }
     }
 }
