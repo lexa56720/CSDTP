@@ -11,12 +11,18 @@ namespace CSDTP
 {
     public class Packet<T> : IPacket where T : ISerializable<T>
     {
-
         public bool IsHasData;
 
         public T? Data;
+        object IPacket.Data => Data;
 
         public Type TypeOfPacket { get; private set; }
+
+        public int ReplyPort { get; init; }
+
+        public DateTime SendTime { get; init; }
+
+        public DateTime ReceiveTime {  get; set; }
 
         public Packet(T data)
         {

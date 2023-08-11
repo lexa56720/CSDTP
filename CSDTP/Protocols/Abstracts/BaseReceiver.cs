@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace CSDTP.Protocols
+namespace CSDTP.Protocols.Abstracts
 {
     public abstract class BaseReceiver : IReceiver
     {
@@ -41,11 +41,13 @@ namespace CSDTP.Protocols
         {
             DataAppear?.Invoke(this, packet);
         }
+
         protected IPacket GetPacket(byte[] bytes)
         {
             using var reader = new BinaryReader(new MemoryStream(bytes));
             var packet = (IPacket)Activator.CreateInstance(Type.GetType(reader.ReadString()));
             packet.Deserialize(reader);
+            packet.ReceiveTime=DateTime.Now;
             return packet;
         }
 
@@ -66,7 +68,7 @@ namespace CSDTP.Protocols
                             }
                         });
                     }
-                    else if (ReceiverQueue.Count < 100 && ReceiverQueue.Count>0)
+                    else if (ReceiverQueue.Count < 100 && ReceiverQueue.Count > 0)
                     {
                         for (int i = 0; i < ReceiverQueue.Count; i++)
                             if (ReceiverQueue.TryDequeue(out var data))
@@ -79,7 +81,7 @@ namespace CSDTP.Protocols
                     {
                         await Task.Delay(20);
                     }
-                    
+
                 }
             });
         }

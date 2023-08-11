@@ -11,6 +11,14 @@ namespace CSDTP.Packets
 
         public Type TypeOfPacket { get; }
 
+        public object Data { get; }
+
         public IPacket Deserialize(BinaryReader reader);
+
+        public int ReplyPort { get; init; }
+
+        public DateTime SendTime { get; init; }
+
+        public DateTime ReceiveTime { get; set; }
     }
 }

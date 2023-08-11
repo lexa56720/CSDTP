@@ -5,9 +5,9 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Protocols
+namespace CSDTP.Protocols.Abstracts
 {
-    internal interface ISender: IDisposable
+    internal interface ISender : IDisposable
     {
         public IPEndPoint Destination { get; }
         public int ReplyPort { get; }

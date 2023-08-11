@@ -5,7 +5,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Protocols
+namespace CSDTP.Protocols.Abstracts
 {
     public abstract class BaseSender : ISender
     {
@@ -22,10 +22,13 @@ namespace CSDTP.Protocols
 
         public abstract Task<bool> Send<T>(T data) where T : ISerializable<T>;
 
-
         protected Packet<T> GetPacket<T>(T data) where T : ISerializable<T>
         {
-            return new Packet<T>(data);
+            return new Packet<T>(data) 
+            { 
+                ReplyPort = ReplyPort,
+                SendTime=DateTime.Now,
+            };
         }
 
     }

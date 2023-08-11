@@ -1,4 +1,5 @@
 ﻿using CSDTP.Packets;
+using CSDTP.Protocols.Abstracts;
 using CSDTP.Protocols.Udp;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,7 @@ namespace CSDTP.Protocols
 
         public int Port => ReceiverSocket.Port;
 
-        public Receiver(int port, bool isTcp=false) 
+        public Receiver(int port, bool isTcp = false)
         {
             if (isTcp)
             {
@@ -43,17 +44,17 @@ namespace CSDTP.Protocols
             }
         }
 
-        public  void Dispose()
+        public void Dispose()
         {
             ReceiverSocket.Dispose();
         }
 
-        public  void Start()
+        public void Start()
         {
             ReceiverSocket.Start();
         }
 
-        public  void Stop()
+        public void Stop()
         {
             ReceiverSocket.Stop();
         }

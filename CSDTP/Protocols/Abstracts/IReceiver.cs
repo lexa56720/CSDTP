@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Protocols
+namespace CSDTP.Protocols.Abstracts
 {
     internal interface IReceiver : IDisposable
     {

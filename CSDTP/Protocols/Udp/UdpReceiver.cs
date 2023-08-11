@@ -1,4 +1,5 @@
 ﻿using CSDTP.Packets;
+using CSDTP.Protocols.Abstracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
