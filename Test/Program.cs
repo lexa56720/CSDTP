@@ -1,5 +1,6 @@
 ﻿using CSDTP;
 using CSDTP.Protocols;
+using CSDTP.Requests;
 using System.Net;
 
 namespace Test
@@ -13,12 +14,15 @@ namespace Test
             //notificator.Subscribe<Message>(Notificator);
             //notificator.Unsubscribe<Message>(Notificator);
 
+            var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666),7777);
+            var responder= new Responder(TimeSpan.FromSeconds(-1),6666);
 
+   
             var receiver = new Receiver(6666);
             receiver.DataAppear += Receiver_DataAppear;
             receiver.Start();
 
-            var sender = new Sender(new IPEndPoint(IPAddress.Loopback, 6666));
+            var sender = new Sender();
          
             while (true)
             {

@@ -6,18 +6,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CSDTP.Requests
 {
-    internal class Responder
+    public class Responder
     {
 
         private QueueProcessor<IPacket> RequestsQueue;
 
         private LifeTimeController<ISender> Senders;
         private IReceiver Receiver { get; set; }
+
+        private MethodInfo SendMethod = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send));
 
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
@@ -27,11 +30,11 @@ namespace CSDTP.Requests
 
         public bool IsTcp { get; }
 
-        public Responder(IPEndPoint destination, bool isTcp = false)
+        public Responder(TimeSpan sendersTimeout, int port, bool isTcp = false)
         {
-            Senders = new LifeTimeController<ISender>(TimeSpan.FromSeconds(5));
+            Senders = new LifeTimeController<ISender>(sendersTimeout);
             RequestsQueue = new QueueProcessor<IPacket>(RequestHandle, 20, TimeSpan.FromMilliseconds(20));
-            Receiver = new Receiver(PortUtils.GetPort(), isTcp);
+            Receiver = new Receiver(port < 0 ? PortUtils.GetPort() : port, isTcp);
             Receiver.DataAppear += RequestAppear;
             IsTcp = isTcp;
         }
@@ -87,7 +90,7 @@ namespace CSDTP.Requests
                 sender = new Sender(destination, IsTcp);
                 Senders.Add(sender);
             }
-            sender.Send(data);
+            SendMethod.Invoke(sender, new object[] { data });
         }
     }
 }

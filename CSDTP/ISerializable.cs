@@ -11,6 +11,6 @@ namespace CSDTP
     {
         public void Serialize(BinaryWriter writer);
 
-        public static new abstract T Deserialize(BinaryReader reader);
+        public static abstract T Deserialize(BinaryReader reader);
     }
 }

@@ -29,6 +29,7 @@ namespace CSDTP.Utils
                 return;
 
             IsRunning = true;
+
             Check();
         }
         public void Stop()

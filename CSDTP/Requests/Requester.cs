@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Requests
 {
-    internal class Requester
+    public class Requester
     {
         private ISender Sender { get; set; }
         private IReceiver Receiver { get; set; }
