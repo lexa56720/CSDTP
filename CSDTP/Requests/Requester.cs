@@ -27,13 +27,17 @@ namespace CSDTP.Requests
 
         private void ResponseAppear(object? sender, IPacket e)
         {
-            var packet = (IRequestContainer)e.Data;
-            Requests[packet.Id].SetResult(e);
+            var packet = (IRequestContainer)e.DataObj;
+            if (Requests.TryGetValue(packet.Id, out var request))
+            {
+                request.SetResult(e);
+            }
+
         }
 
         public async Task<T> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
         {
-            var container = new RequestContainer<U>(data);
+            var container = new RequestContainer<U>(data, RequestType.Post);
             await Sender.Send(container);
 
             var resultSource = new TaskCompletionSource<IPacket>();
@@ -55,7 +59,8 @@ namespace CSDTP.Requests
 
         public async Task<bool> GetAsync<U>(U data) where U : ISerializable<U>
         {
-            return await Sender.Send(data);
+            var container = new RequestContainer<U>(data, RequestType.Get);
+            return await Sender.Send(container);
         }
         public IPEndPoint Destination => Sender.Destination;
         public int ReplyPort => Sender.ReplyPort;

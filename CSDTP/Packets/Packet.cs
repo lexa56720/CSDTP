@@ -14,15 +14,15 @@ namespace CSDTP
         public bool IsHasData;
 
         public T? Data;
-        object IPacket.Data => Data;
+        public object DataObj => Data;
 
         public Type TypeOfPacket { get; private set; }
 
-        public int ReplyPort { get; init; }
+        public int ReplyPort { get; internal set; }
 
-        public DateTime SendTime { get; init; }
+        public DateTime SendTime { get; internal set; }
 
-        public DateTime ReceiveTime {  get; set; }
+        public DateTime ReceiveTime {  get; internal set; }
 
         public Packet(T data)
         {
@@ -39,6 +39,10 @@ namespace CSDTP
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(typeof(Packet<T>).FullName);
+
+            writer.Write(ReplyPort);
+            writer.Write(SendTime.ToBinary());
+
             writer.Write(IsHasData);
             if (IsHasData)
                 Data.Serialize(writer);
@@ -46,9 +50,13 @@ namespace CSDTP
 
         public IPacket Deserialize(BinaryReader reader)
         {
+            ReplyPort= reader.ReadInt32();    
+            SendTime = DateTime.FromBinary(reader.ReadInt64());
+
             IsHasData = reader.ReadBoolean();
             if (IsHasData)
                Data = T.Deserialize(reader);
+
             return this;
         }
     }

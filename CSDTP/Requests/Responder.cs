@@ -16,16 +16,38 @@ namespace CSDTP.Requests
         private ISender Sender { get; set; }
         private IReceiver Receiver { get; set; }
 
+        private Dictionary<Type, object> GetHandlers { get; set; }
+
+        private Dictionary<Type, object> PostHandlers { get; set; }
+
         public Responder(IPEndPoint destination, bool isTcp = false)
         {
             Sender = new Sender(destination, isTcp);
             Receiver = new Receiver(PortUtils.GetPort(), isTcp);
-            Receiver.DataAppear += ResponseAppear;
+            Receiver.DataAppear += RequestAppear;
         }
 
-        private void ResponseAppear(object? sender, IPacket e)
+        public void RegisterGetHandler<T>(Action<T> action)
         {
-            throw new NotImplementedException();
+            GetHandlers.Add(typeof(T), action);
+        }
+        public void RegisterPostHandler<T, U>(Func<T, U> action) where U : ISerializable<U>
+        {
+            PostHandlers.Add(typeof(T), action);
+        }
+
+        private void RequestAppear(object? sender, IPacket e)
+        {
+            var request = (IRequestContainer)e.DataObj;
+            if (request.RequestType == RequestType.Post)
+            {
+                if (PostHandlers.TryGetValue(request.DataType, out var handler))
+                {
+                    ((Func<object, object>)handler).Invoke(request.DataObj);
+                    var response = new RequestContainer<>();
+                }
+            }
+
         }
     }
 }
