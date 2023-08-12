@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace CSDTP
 {
-    public interface ISerializable<T>
+
+    public interface ISerializable<T> 
     {
         public void Serialize(BinaryWriter writer);
 
-        public static abstract T Deserialize(BinaryReader reader);
+        public static new abstract T Deserialize(BinaryReader reader);
     }
 }

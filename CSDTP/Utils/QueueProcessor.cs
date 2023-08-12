@@ -62,7 +62,7 @@ namespace CSDTP.Utils
                         ProcessSequentially(count);
 
                     else
-                        await Task.Delay((int)Timeout.TotalMilliseconds);
+                        await Task.Delay(Timeout);
                 }
             });
         }

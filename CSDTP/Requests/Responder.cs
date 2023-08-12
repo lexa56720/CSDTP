@@ -15,7 +15,8 @@ namespace CSDTP.Requests
     {
 
         private QueueProcessor<IPacket> RequestsQueue;
-        private Dictionary<IPEndPoint, ISender> Senders { get; set; }
+
+        private LifeTimeController<ISender> Senders;
         private IReceiver Receiver { get; set; }
 
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
@@ -24,11 +25,15 @@ namespace CSDTP.Requests
 
         private Dictionary<Type, object> PostHandlers { get; set; }
 
+        public bool IsTcp { get; }
+
         public Responder(IPEndPoint destination, bool isTcp = false)
         {
+            Senders = new LifeTimeController<ISender>(TimeSpan.FromSeconds(5));
             RequestsQueue = new QueueProcessor<IPacket>(RequestHandle, 20, TimeSpan.FromMilliseconds(20));
             Receiver = new Receiver(PortUtils.GetPort(), isTcp);
             Receiver.DataAppear += RequestAppear;
+            IsTcp = isTcp;
         }
 
 
@@ -76,7 +81,13 @@ namespace CSDTP.Requests
         }
         private async Task Reply(IRequestContainer data, IPEndPoint destination)
         {
-
+            var sender = Senders.Get(s => s.Destination.Equals(destination) && s.IsAvailable);
+            if (sender == null)
+            {
+                sender = new Sender(destination, IsTcp);
+                Senders.Add(sender);
+            }
+            sender.Send(data);
         }
     }
 }
