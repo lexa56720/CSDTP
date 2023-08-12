@@ -20,7 +20,13 @@ namespace CSDTP.Protocols.Udp
 
         public override void Dispose()
         {
+            Close();
+        }
+
+        public override void Close()
+        {
             Client.Close();
+            IsAvailable = false;
         }
 
         public override async Task<bool> Send<T>(T data)

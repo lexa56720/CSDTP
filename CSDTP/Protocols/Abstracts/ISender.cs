@@ -11,7 +11,8 @@ namespace CSDTP.Protocols.Abstracts
     {
         public IPEndPoint Destination { get; }
         public int ReplyPort { get; }
-
-        public abstract Task<bool> Send<T>(T data) where T : ISerializable<T>;
+        public bool IsAvailable { get; }
+        public void Close();
+        public Task<bool> Send<T>(T data) where T : ISerializable<T>;
     }
 }

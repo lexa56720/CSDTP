@@ -1,8 +1,10 @@
 ﻿using CSDTP.Packets;
+using CSDTP.Utils;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -13,7 +15,9 @@ namespace CSDTP.Protocols.Abstracts
     {
         public virtual bool IsReceiving { get; protected set; }
 
-        protected ConcurrentQueue<byte[]> ReceiverQueue = new ConcurrentQueue<byte[]>();
+
+        private protected QueueProcessor<Tuple<byte[], IPAddress>> ReceiverQueue;
+
 
         public int Port { get; }
 
@@ -22,19 +26,27 @@ namespace CSDTP.Protocols.Abstracts
         public BaseReceiver(int port)
         {
             Port = port;
+            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
         }
 
         public abstract void Dispose();
 
         public virtual void Start()
         {
+            if (IsReceiving)
+                return;
+
             IsReceiving = true;
-            HandleQueue();
+            ReceiverQueue.Start();
         }
 
         public virtual void Stop()
         {
+            if (!IsReceiving)
+                return;
+
             IsReceiving = false;
+            ReceiverQueue.Stop();
         }
 
         protected virtual void OnDataAppear(IPacket packet)
@@ -42,48 +54,21 @@ namespace CSDTP.Protocols.Abstracts
             DataAppear?.Invoke(this, packet);
         }
 
-        protected IPacket GetPacket(byte[] bytes)
+        protected IPacket GetPacket(byte[] bytes, IPAddress source)
         {
             using var reader = new BinaryReader(new MemoryStream(bytes));
             var packet = (IPacket)Activator.CreateInstance(Type.GetType(reader.ReadString()));
             packet.Deserialize(reader);
-            packet.ReceiveTime=DateTime.Now;
+            packet.ReceiveTime = DateTime.Now;
+            packet.Source = source;
             return packet;
         }
 
-        private void HandleQueue()
-        {
-            Task.Run(async () =>
-            {
-                while (IsReceiving)
-                {
-                    if (ReceiverQueue.Count > 100)
-                    {
-                        Parallel.For(0, ReceiverQueue.Count, (i) =>
-                        {
-                            if (ReceiverQueue.TryDequeue(out var data))
-                            {
-                                var packet = GetPacket(data);
-                                OnDataAppear(packet);
-                            }
-                        });
-                    }
-                    else if (ReceiverQueue.Count < 100 && ReceiverQueue.Count > 0)
-                    {
-                        for (int i = 0; i < ReceiverQueue.Count; i++)
-                            if (ReceiverQueue.TryDequeue(out var data))
-                            {
-                                var packet = GetPacket(data);
-                                OnDataAppear(packet);
-                            }
-                    }
-                    else
-                    {
-                        await Task.Delay(20);
-                    }
 
-                }
-            });
+        private void HandleData(Tuple<byte[], IPAddress> packetInfo)
+        {
+            var packet = GetPacket(packetInfo.Item1, packetInfo.Item2);
+            OnDataAppear(packet);
         }
     }
 }

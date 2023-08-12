@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Net;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,7 +23,9 @@ namespace CSDTP
 
         public DateTime SendTime { get; internal set; }
 
-        public DateTime ReceiveTime {  get; internal set; }
+        public DateTime ReceiveTime {  get;  set; }
+
+        public IPAddress Source { get; set; }
 
         public Packet(T data)
         {

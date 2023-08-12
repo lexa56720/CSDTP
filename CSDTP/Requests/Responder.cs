@@ -13,8 +13,12 @@ namespace CSDTP.Requests
 {
     internal class Responder
     {
-        private ISender Sender { get; set; }
+
+        private QueueProcessor<IPacket> RequestsQueue;
+        private Dictionary<IPEndPoint, ISender> Senders { get; set; }
         private IReceiver Receiver { get; set; }
+
+        public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
         private Dictionary<Type, object> GetHandlers { get; set; }
 
@@ -22,9 +26,29 @@ namespace CSDTP.Requests
 
         public Responder(IPEndPoint destination, bool isTcp = false)
         {
-            Sender = new Sender(destination, isTcp);
+            RequestsQueue = new QueueProcessor<IPacket>(RequestHandle, 20, TimeSpan.FromMilliseconds(20));
             Receiver = new Receiver(PortUtils.GetPort(), isTcp);
             Receiver.DataAppear += RequestAppear;
+        }
+
+
+        public void Start()
+        {
+            if (IsRunning)
+                return;
+
+            Receiver.Start();
+            RequestsQueue.Start();
+        }
+
+        public void Stop()
+        {
+            if (!IsRunning)
+                return;
+
+            Receiver.Stop();
+            RequestsQueue.Stop();
+
         }
 
         public void RegisterGetHandler<T>(Action<T> action)
@@ -38,15 +62,20 @@ namespace CSDTP.Requests
 
         private void RequestAppear(object? sender, IPacket e)
         {
-            var request = (IRequestContainer)e.DataObj;
-            if (request.RequestType == RequestType.Post)
+            RequestsQueue.Add(e);
+        }
+        private void RequestHandle(IPacket packet)
+        {
+            var request = (IRequestContainer)packet.DataObj;
+            if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue(request.DataType, out var handler))
             {
-                if (PostHandlers.TryGetValue(request.DataType, out var handler))
-                {
-                    ((Func<object, object>)handler).Invoke(request.DataObj);
-                    var response = new RequestContainer<>();
-                }
+                var responseObj = ((Func<object, object>)handler).Invoke(request.DataObj);
+                var response = (IRequestContainer)Activator.CreateInstance(typeof(RequestContainer<>), responseObj, request.Id, RequestType.Response);
+                Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort));
             }
+        }
+        private async Task Reply(IRequestContainer data, IPEndPoint destination)
+        {
 
         }
     }

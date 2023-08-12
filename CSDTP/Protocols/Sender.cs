@@ -15,6 +15,7 @@ namespace CSDTP.Protocols
 
         public int ReplyPort => SenderSocket.ReplyPort;
 
+        public bool IsAvailable => SenderSocket.IsAvailable;
 
         private BaseSender SenderSocket;
 
@@ -41,5 +42,11 @@ namespace CSDTP.Protocols
         {
             return SenderSocket.Send(data);
         }
+
+        public void Close()
+        {
+            SenderSocket.Close();
+        }
+
     }
 }

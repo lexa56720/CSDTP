@@ -46,6 +46,7 @@ namespace CSDTP.Protocols
 
         public void Dispose()
         {
+            Stop();
             ReceiverSocket.Dispose();
         }
 

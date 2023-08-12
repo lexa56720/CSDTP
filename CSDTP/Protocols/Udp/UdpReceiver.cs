@@ -3,6 +3,7 @@ using CSDTP.Protocols.Abstracts;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ namespace CSDTP.Protocols.Udp
         public override void Dispose()
         {
             Listener.Close();
+            Stop();
         }
 
         public override void Start()
@@ -35,16 +37,9 @@ namespace CSDTP.Protocols.Udp
                     if (!IsReceiving)
                         return;
 
-                    ReceiverQueue.Enqueue(data.Buffer);
+                    ReceiverQueue.Add(new Tuple<byte[], IPAddress>(data.Buffer, data.RemoteEndPoint.Address));
                 }
             });
         }
-
-        public override void Stop()
-        {
-            base.Stop();
-        }
-
-
     }
 }

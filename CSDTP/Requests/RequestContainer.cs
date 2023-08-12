@@ -25,7 +25,13 @@ namespace CSDTP.Requests
             RequestType = type;
             DataType = typeof(T);
         }
-
+        public RequestContainer(T data, Guid id,RequestType type)
+        { 
+            Data = data;
+            Id = id;
+            RequestType = type;
+            DataType = typeof(T);
+        }
         public RequestContainer(T data, Guid id)
         {
             Data = data;
