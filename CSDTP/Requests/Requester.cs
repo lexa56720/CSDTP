@@ -38,7 +38,6 @@ namespace CSDTP.Requests
 
         public async Task<T> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
         {
-
             var container = new RequestContainer<U>(data, RequestType.Post);
             await Sender.Send(container);
 
@@ -46,10 +45,9 @@ namespace CSDTP.Requests
 
             if (Sender.IsAvailable && Requests.TryAdd(container.Id, resultSource))
             {
-                var task = Task.Delay((int)timeout.TotalMilliseconds);
                 var response = resultSource.Task;
 
-                Task.WaitAny(task, response);
+                Task.WaitAll(new Task[] { response }, timeout);
 
                 Requests.TryRemove(new KeyValuePair<Guid, TaskCompletionSource<IPacket>>(container.Id, resultSource));
                 if (response.IsCompletedSuccessfully)
