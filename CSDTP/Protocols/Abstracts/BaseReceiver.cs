@@ -57,12 +57,20 @@ namespace CSDTP.Protocols.Abstracts
 
         protected IPacket GetPacket(byte[] bytes, IPAddress source)
         {
-            using var reader = new BinaryReader(new MemoryStream(bytes));
-            var packet = (IPacket)Activator.CreateInstance(Type.GetType(reader.ReadString()));
-            packet.Deserialize(reader);
-            packet.ReceiveTime = DateTime.Now;
-            packet.Source = source;
-            return packet;
+            try
+            {
+                using var reader = new BinaryReader(new MemoryStream(bytes));
+                var packet = (IPacket)Activator.CreateInstance(Type.GetType(reader.ReadString()));
+                packet.Deserialize(reader);
+                packet.ReceiveTime = DateTime.Now;
+                packet.Source = source;
+                return packet;
+            }
+            catch (Exception ex) 
+            {
+                throw new Exception("PACKET DESERIALIZE ERROR",ex);
+            }
+
         }
 
 

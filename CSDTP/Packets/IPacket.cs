@@ -9,7 +9,6 @@ namespace CSDTP.Packets
 {
     public interface IPacket
     {
-
         public Type TypeOfPacket { get; }
 
         public object DataObj { get; }

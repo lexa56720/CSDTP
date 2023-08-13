@@ -21,7 +21,7 @@ namespace CSDTP.Requests
 
         private Dictionary<Type, object> GetHandlers { get; set; } = new Dictionary<Type, object>();
 
-        private Dictionary<Type, object> PostHandlers { get; set; } = new Dictionary<Type, object>();   
+        private Dictionary<Type, object> PostHandlers { get; set; } = new Dictionary<Type, object>();
 
         private QueueProcessor<IPacket> RequestsQueue { get; set; }
 
@@ -84,16 +84,21 @@ namespace CSDTP.Requests
         }
         private void HandleRequest(IPacket packet)
         {
-            var request = (IRequestContainer)packet.DataObj;
-            object handlerFunc;
-            if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue(request.DataType, out handlerFunc))
+            try
             {
-                HandlePostRequest(packet, request, handlerFunc);
+                var request = (IRequestContainer)packet.DataObj;
+
+                if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue(request.DataType, out object handlerFunc))
+                    HandlePostRequest(packet, request, handlerFunc);
+
+                else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out handlerFunc))
+                    HandleGetRequest(request, handlerFunc);
             }
-            else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out handlerFunc))
+            catch (Exception e)
             {
-                HandleGetRequest(request, handlerFunc);
+                throw new Exception("REQUEST HANDLING FAIL", e);
             }
+
         }
 
         private void HandlePostRequest(IPacket packet, IRequestContainer request, object handler)

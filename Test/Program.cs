@@ -27,7 +27,7 @@ namespace Test
 
             while (globalCount < 5)
             {
-                var result = await requester.GetAsync<Message>(new Message("fff " + count++));
+                var result = await requester.GetAsync(new Message("fff " + count++));
 
                 if (stopwatch.ElapsedMilliseconds > 1000)
                 {
