@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Requests
+namespace CSDTP.Requests.RequestHeaders
 {
     internal class RequestContainer<T> : IRequestContainer, ISerializable<RequestContainer<T>> where T : ISerializable<T>
     {
@@ -18,15 +18,15 @@ namespace CSDTP.Requests
 
         public object DataObj => Data;
 
-        public RequestContainer(T data,RequestType type)
+        public RequestContainer(T data, RequestType type)
         {
             Data = data;
             Id = Guid.NewGuid();
             RequestType = type;
             DataType = typeof(T);
         }
-        public RequestContainer(T data, Guid id,RequestType type)
-        { 
+        public RequestContainer(T data, Guid id, RequestType type)
+        {
             Data = data;
             Id = id;
             RequestType = type;
@@ -45,7 +45,7 @@ namespace CSDTP.Requests
         public static RequestContainer<T> Deserialize(BinaryReader reader)
         {
             var id = new Guid(reader.ReadBytes(16));
-            return new RequestContainer<T>(T.Deserialize(reader),id);
+            return new RequestContainer<T>(T.Deserialize(reader), id);
         }
 
         public void Serialize(BinaryWriter writer)

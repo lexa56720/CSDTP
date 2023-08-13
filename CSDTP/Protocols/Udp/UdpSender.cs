@@ -21,8 +21,8 @@ namespace CSDTP.Protocols.Udp
 
         public override void Dispose()
         {
-                IsAvailable = false;
-                Client.Dispose();
+            IsAvailable = false;
+            Client.Dispose();
         }
 
         public override void Close()

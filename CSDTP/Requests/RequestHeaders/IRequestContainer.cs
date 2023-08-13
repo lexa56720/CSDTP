@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Requests
+namespace CSDTP.Requests.RequestHeaders
 {
     enum RequestType
     {

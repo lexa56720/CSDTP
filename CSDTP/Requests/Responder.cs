@@ -1,6 +1,7 @@
 ﻿using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
+using CSDTP.Requests.RequestHeaders;
 using CSDTP.Utils;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,8 @@ namespace CSDTP.Requests
     {
 
         public bool IsTcp { get; }
+
+        public int ListenPort => Receiver.Port;
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
         private Dictionary<Type, object> GetHandlers { get; set; } = new Dictionary<Type, object>();
@@ -34,7 +37,7 @@ namespace CSDTP.Requests
         {
             Senders = new LifeTimeController<ISender>(sendersTimeout);
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
-            Receiver = new Receiver(port < 0 ? PortUtils.GetPort() : port, isTcp);
+            Receiver = new Receiver(port < 0 ? 0 : port, isTcp);
             Receiver.DataAppear += RequestAppear;
             IsTcp = isTcp;
         }

@@ -1,6 +1,7 @@
 ﻿using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
+using CSDTP.Requests.RequestHeaders;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
