@@ -13,31 +13,50 @@ namespace CSDTP.Protocols.Udp
     internal class UdpReceiver : BaseReceiver
     {
         private UdpClient Listener;
+
+        private CancellationTokenSource TokenSource = new CancellationTokenSource();
         public UdpReceiver(int port) : base(port)
         {
             Listener = new UdpClient(port);
         }
 
+        public override void Close()
+        {
+            Dispose();
+        }
+
         public override void Dispose()
         {
-            Listener.Close();
             Stop();
+            TokenSource.Cancel();
+            TokenSource.Dispose();
+            Listener.Dispose();
         }
 
         public override void Start()
         {
             base.Start();
+            TokenSource.Dispose();
+            TokenSource = new CancellationTokenSource();
+            var token = TokenSource.Token;
 
             Task.Run(async () =>
             {
                 while (IsReceiving)
                 {
-                    var data = await Listener.ReceiveAsync();
+                    try
+                    {
+                        var data = await Listener.ReceiveAsync(token);
 
-                    if (!IsReceiving)
+                        token.ThrowIfCancellationRequested();
+
+                        ReceiverQueue.Add(new Tuple<byte[], IPAddress>(data.Buffer, data.RemoteEndPoint.Address));
+                    }
+                    catch (OperationCanceledException e)
+                    {
                         return;
+                    }
 
-                    ReceiverQueue.Add(new Tuple<byte[], IPAddress>(data.Buffer, data.RemoteEndPoint.Address));
                 }
             });
         }

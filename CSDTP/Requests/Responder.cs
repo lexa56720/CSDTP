@@ -6,45 +6,55 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CSDTP.Requests
 {
-    public class Responder
+    public class Responder : IDisposable
     {
 
-        private QueueProcessor<IPacket> RequestsQueue;
+        public bool IsTcp { get; }
+        public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
-        private LifeTimeController<ISender> Senders;
+        private Dictionary<Type, object> GetHandlers { get; set; } = new Dictionary<Type, object>();
+
+        private Dictionary<Type, object> PostHandlers { get; set; } = new Dictionary<Type, object>();   
+
+        private QueueProcessor<IPacket> RequestsQueue { get; set; }
+
+        private LifeTimeController<ISender> Senders { get; set; }
         private IReceiver Receiver { get; set; }
 
         private MethodInfo SendMethod = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send));
 
-        public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
-
-        private Dictionary<Type, object> GetHandlers { get; set; }
-
-        private Dictionary<Type, object> PostHandlers { get; set; }
-
-        public bool IsTcp { get; }
-
         public Responder(TimeSpan sendersTimeout, int port, bool isTcp = false)
         {
             Senders = new LifeTimeController<ISender>(sendersTimeout);
-            RequestsQueue = new QueueProcessor<IPacket>(RequestHandle, 20, TimeSpan.FromMilliseconds(20));
+            RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
             Receiver = new Receiver(port < 0 ? PortUtils.GetPort() : port, isTcp);
             Receiver.DataAppear += RequestAppear;
             IsTcp = isTcp;
         }
 
+        public void Dispose()
+        {
+            Senders.Stop();
+            Receiver.Stop();
+            RequestsQueue.Stop();
+
+            Receiver.DataAppear -= RequestAppear;
+            Receiver.Dispose();
+        }
 
         public void Start()
         {
             if (IsRunning)
                 return;
 
+            Senders.Start();
             Receiver.Start();
             RequestsQueue.Start();
         }
@@ -54,9 +64,9 @@ namespace CSDTP.Requests
             if (!IsRunning)
                 return;
 
+            Senders.Stop();
             Receiver.Stop();
             RequestsQueue.Stop();
-
         }
 
         public void RegisterGetHandler<T>(Action<T> action)
@@ -72,17 +82,36 @@ namespace CSDTP.Requests
         {
             RequestsQueue.Add(e);
         }
-        private void RequestHandle(IPacket packet)
+        private void HandleRequest(IPacket packet)
         {
             var request = (IRequestContainer)packet.DataObj;
-            if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue(request.DataType, out var handler))
+            object handlerFunc;
+            if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue(request.DataType, out handlerFunc))
             {
-                var responseObj = ((Func<object, object>)handler).Invoke(request.DataObj);
-                var response = (IRequestContainer)Activator.CreateInstance(typeof(RequestContainer<>), responseObj, request.Id, RequestType.Response);
-                Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort));
+                HandlePostRequest(packet, request, handlerFunc);
+            }
+            else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out handlerFunc))
+            {
+                HandleGetRequest(request, handlerFunc);
             }
         }
-        private async Task Reply(IRequestContainer data, IPEndPoint destination)
+
+        private void HandlePostRequest(IPacket packet, IRequestContainer request, object handler)
+        {
+            var responseObj = ((Delegate)handler).Method.Invoke(handler, new object[] { request.DataObj });
+
+            var genericType = responseObj.GetType();
+            var responseType = typeof(RequestContainer<>).MakeGenericType(genericType);
+
+            var response = (IRequestContainer)Activator.CreateInstance(responseType, responseObj, request.Id, RequestType.Response);
+            Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort));
+        }
+        private void HandleGetRequest(IRequestContainer request, object handler)
+        {
+            ((Delegate)handler).Method.Invoke(handler, new object[] { request.DataObj });
+        }
+
+        private void Reply(IRequestContainer data, IPEndPoint destination)
         {
             var sender = Senders.Get(s => s.Destination.Equals(destination) && s.IsAvailable);
             if (sender == null)
@@ -90,7 +119,9 @@ namespace CSDTP.Requests
                 sender = new Sender(destination, IsTcp);
                 Senders.Add(sender);
             }
-            SendMethod.Invoke(sender, new object[] { data });
+            var method = SendMethod.MakeGenericMethod(data.GetType());
+            method.Invoke(sender, new object[] { data });
         }
+
     }
 }

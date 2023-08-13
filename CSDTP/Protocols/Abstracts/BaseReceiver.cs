@@ -30,6 +30,7 @@ namespace CSDTP.Protocols.Abstracts
         }
 
         public abstract void Dispose();
+        public abstract void Close();
 
         public virtual void Start()
         {

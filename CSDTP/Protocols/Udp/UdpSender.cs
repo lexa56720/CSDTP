@@ -12,6 +12,7 @@ namespace CSDTP.Protocols.Udp
     public class UdpSender : BaseSender
     {
         private UdpClient Client { get; set; }
+
         public UdpSender(IPEndPoint destination, int replyPort) : base(destination, replyPort)
         {
             Client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
@@ -20,21 +21,24 @@ namespace CSDTP.Protocols.Udp
 
         public override void Dispose()
         {
-            Close();
+                IsAvailable = false;
+                Client.Dispose();
         }
 
         public override void Close()
         {
-            Client.Close();
-            IsAvailable = false;
+            Dispose();
         }
 
         public override async Task<bool> Send<T>(T data)
         {
+            if (!IsAvailable)
+                return false;
             using var ms = new MemoryStream();
             using var writer = new BinaryWriter(ms);
             GetPacket(data).Serialize(writer);
             var bytes = ms.ToArray();
+
             var sended = await Client.SendAsync(bytes, bytes.Length);
             return sended == bytes.Length;
         }

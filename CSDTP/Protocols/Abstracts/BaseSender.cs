@@ -12,7 +12,7 @@ namespace CSDTP.Protocols.Abstracts
         public IPEndPoint Destination { get; }
         public int ReplyPort { get; }
 
-        public bool IsAvailable { get; protected set; }
+        public bool IsAvailable { get; protected set; } = true;
 
         public BaseSender(IPEndPoint destination, int replyPort = -1)
         {

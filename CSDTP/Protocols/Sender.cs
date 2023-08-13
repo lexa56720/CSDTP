@@ -38,15 +38,16 @@ namespace CSDTP.Protocols
             SenderSocket.Dispose();
         }
 
-        public Task<bool> Send<T>(T data) where T : ISerializable<T>
-        {
-            return SenderSocket.Send(data);
-        }
+
 
         public void Close()
         {
             SenderSocket.Close();
         }
 
+        public Task<bool> Send<T>(T data) where T : ISerializable<T>
+        {
+            return SenderSocket.Send(data);
+        }
     }
 }

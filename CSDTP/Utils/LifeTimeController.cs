@@ -30,7 +30,8 @@ namespace CSDTP.Utils
 
             IsRunning = true;
 
-            Check();
+            if (LifeTime.TotalMilliseconds > 0)
+                Check();
         }
         public void Stop()
         {
@@ -38,7 +39,10 @@ namespace CSDTP.Utils
                 return;
 
             IsRunning = false;
-         
+
+            if (LifeTime.TotalMilliseconds < 0)
+                Clear();
+
         }
 
         public void Clear()
@@ -79,7 +83,7 @@ namespace CSDTP.Utils
                     {
                         for (int i = 0; i < Objects.Count; i++)
                         {
-                            if (Objects[i].Value < nowTime)
+                            if (Objects[i].Value > nowTime)
                                 newObjects.Add(Objects[i]);
                             else
                                 Objects[i].Key.Dispose();
