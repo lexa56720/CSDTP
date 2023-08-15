@@ -1,4 +1,5 @@
-﻿using CSDTP.Packets;
+﻿using CSDTP.Cryptography;
+using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
@@ -11,12 +12,13 @@ using System.Net.Sockets;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CSDTP.Requests
 {
     public class Responder : IDisposable
     {
-
+        private IEncrypter? Encrypter { get; init; }
         public bool IsTcp { get; }
 
         public int ListenPort => Receiver.Port;
@@ -31,17 +33,40 @@ namespace CSDTP.Requests
         private LifeTimeController<ISender> Senders { get; set; }
         private IReceiver Receiver { get; set; }
 
-        private MethodInfo SendMethod = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send));
+        private MethodInfo SendMethod { get; set; }
+
+        private MethodInfo SendMethodCrypt { get; set; }
 
         public Responder(TimeSpan sendersTimeout, int port, bool isTcp = false)
         {
+            SendMethodsSetup();
+
             Senders = new LifeTimeController<ISender>(sendersTimeout);
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
             Receiver = new Receiver(port < 0 ? 0 : port, isTcp);
             Receiver.DataAppear += RequestAppear;
             IsTcp = isTcp;
         }
+        public Responder(TimeSpan sendersTimeout, int port, IEncrypter encrypter, bool isTcp = false)
+        {
+            Encrypter = encrypter;
+            SendMethodsSetup();
 
+            Senders = new LifeTimeController<ISender>(sendersTimeout);
+            RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
+
+
+            Receiver = new Receiver(port < 0 ? 0 : port, encrypter, isTcp);
+            Receiver.DataAppear += RequestAppear;
+
+            IsTcp = isTcp;
+        }
+
+        private void SendMethodsSetup()
+        {
+            SendMethod = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetParameters().Length == 1);
+            SendMethodCrypt = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetParameters().Length == 2);
+        }
         public void Dispose()
         {
             Senders.Stop();
@@ -127,8 +152,27 @@ namespace CSDTP.Requests
                 sender = new Sender(destination, IsTcp);
                 Senders.Add(sender);
             }
-            var method = SendMethod.MakeGenericMethod(data.GetType());
-            method.Invoke(sender, new object[] { data });
+            var method = GetSendMethod(data.GetType());
+            InvokeSendMethod(method, sender, data);
+
+        }
+
+        private void InvokeSendMethod(MethodInfo method, ISender sender, IRequestContainer data)
+        {
+            if (Encrypter == null)
+                method.Invoke(sender, new object[] { data });
+            else
+                method.Invoke(sender, new object[] { data, Encrypter });
+
+        }
+        private MethodInfo GetSendMethod(Type type)
+        {
+            MethodInfo result;
+            if (Encrypter == null)
+                result = SendMethod;
+            else
+                result = SendMethodCrypt;
+            return result.MakeGenericMethod(type);
         }
 
     }

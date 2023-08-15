@@ -1,4 +1,5 @@
-﻿using CSDTP.Packets;
+﻿using CSDTP.Cryptography;
+using CSDTP.Packets;
 using CSDTP.Utils;
 using System;
 using System.Collections.Concurrent;
@@ -18,17 +19,23 @@ namespace CSDTP.Protocols.Abstracts
 
         private protected QueueProcessor<Tuple<byte[], IPAddress>> ReceiverQueue;
 
+        public IEncrypter? Decrypter { get; protected set; }
 
         public int Port { get; }
 
-        public event EventHandler<IPacket> DataAppear;
+        public event EventHandler<IPacket>? DataAppear;
 
         public BaseReceiver(int port)
         {
             Port = port;
             ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
         }
-
+        public BaseReceiver(int port, IEncrypter decrypter)
+        {
+            Port = port;
+            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
+            Decrypter = decrypter;
+        }
         public abstract void Dispose();
         public abstract void Close();
 
@@ -59,20 +66,41 @@ namespace CSDTP.Protocols.Abstracts
         {
             try
             {
+                bytes = TryToDecrypt(bytes);
+
                 using var reader = new BinaryReader(new MemoryStream(bytes));
+
                 var packet = (IPacket)Activator.CreateInstance(Type.GetType(reader.ReadString()));
                 packet.Deserialize(reader);
                 packet.ReceiveTime = DateTime.Now;
                 packet.Source = source;
                 return packet;
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
-                throw new Exception("PACKET DESERIALIZE ERROR",ex);
+                throw new Exception("PACKET DESERIALIZE ERROR", ex);
             }
 
         }
 
+        private byte[] TryToDecrypt(byte[] data)
+        {
+            var isCrypted = data[0] == 1;
+            if (isCrypted)
+                try
+                {
+                    if (Decrypter != null)
+                        return Decrypter.Decrypt(data, 1, data.Length - 1);
+                    else
+                        throw new Exception("UNKONW PACKET FORMAT/CRYPTED BUT DECRYPTOR IS NULL");
+                }
+                catch
+                {
+                    throw;
+                }
+            else
+                return data.Skip(1).ToArray();
+        }
 
         private void HandleData(Tuple<byte[], IPAddress> packetInfo)
         {

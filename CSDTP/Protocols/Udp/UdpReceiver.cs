@@ -1,4 +1,5 @@
-﻿using CSDTP.Packets;
+﻿using CSDTP.Cryptography;
+using CSDTP.Packets;
 using CSDTP.Protocols.Abstracts;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,10 @@ namespace CSDTP.Protocols.Udp
         {
             Listener = new UdpClient(port);
         }
-
+        public UdpReceiver(int port,IEncrypter encrypter) : base(port,encrypter)
+        {
+            Listener = new UdpClient(port);
+        }
         public override void Close()
         {
             Dispose();

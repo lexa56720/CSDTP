@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CSDTP.Cryptography;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -14,5 +15,8 @@ namespace CSDTP.Protocols.Abstracts
         public bool IsAvailable { get; }
         public void Close();
         public Task<bool> Send<T>(T data) where T : ISerializable<T>;
+
+        public Task<bool> Send<T>(T data,IEncrypter encrypter) where T : ISerializable<T>;
+
     }
 }

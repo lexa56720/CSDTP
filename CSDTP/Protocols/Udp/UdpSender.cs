@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using CSDTP.Cryptography;
 using CSDTP.Protocols.Abstracts;
 
 namespace CSDTP.Protocols.Udp
@@ -30,14 +31,10 @@ namespace CSDTP.Protocols.Udp
             Dispose();
         }
 
-        public override async Task<bool> Send<T>(T data)
+        protected override async Task<bool> SendBytes(byte[] bytes)
         {
             if (!IsAvailable)
                 return false;
-            using var ms = new MemoryStream();
-            using var writer = new BinaryWriter(ms);
-            GetPacket(data).Serialize(writer);
-            var bytes = ms.ToArray();
 
             var sended = await Client.SendAsync(bytes, bytes.Length);
             return sended == bytes.Length;

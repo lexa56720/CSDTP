@@ -1,4 +1,5 @@
 ﻿using CSDTP;
+using CSDTP.Cryptography;
 using CSDTP.Protocols;
 using CSDTP.Requests;
 using System.Diagnostics;
@@ -10,10 +11,10 @@ namespace Test
     {
         static async Task Main(string[] args)
         {
-            await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
+            //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
 
 
-            await TestGet();
+           // await TestGet();
             await TestPost();
             Console.ReadLine();
 
@@ -47,8 +48,11 @@ namespace Test
 
         public static async Task TestPost()
         {
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666), 7777);
-            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666);
+            //using var crypter = new RsaEncrypter();
+            using var crypter = new AesEncrypter();
+
+            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666), 7777,crypter);
+            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666, crypter);
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
 
@@ -56,7 +60,7 @@ namespace Test
             int globalCount = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            while (globalCount < 5)
+            while (globalCount < 50)
             {
                 var result = await requester.PostAsync<Message, Message>(new Message("fff " + count++), TimeSpan.FromSeconds(20));
 

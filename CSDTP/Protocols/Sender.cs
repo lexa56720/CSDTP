@@ -1,4 +1,5 @@
-﻿using CSDTP.Protocols.Abstracts;
+﻿using CSDTP.Cryptography;
+using CSDTP.Protocols.Abstracts;
 using CSDTP.Protocols.Udp;
 using System;
 using System.Collections.Generic;
@@ -39,7 +40,6 @@ namespace CSDTP.Protocols
         }
 
 
-
         public void Close()
         {
             SenderSocket.Close();
@@ -48,6 +48,11 @@ namespace CSDTP.Protocols
         public Task<bool> Send<T>(T data) where T : ISerializable<T>
         {
             return SenderSocket.Send(data);
+        }
+
+        public Task<bool> Send<T>(T data, IEncrypter encrypter) where T : ISerializable<T>
+        {
+            return SenderSocket.Send(data, encrypter);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using CSDTP.Packets;
+﻿using CSDTP.Cryptography;
+using CSDTP.Packets;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Protocols.Udp;
 using System;
@@ -28,6 +29,18 @@ namespace CSDTP.Protocols
             else
             {
                 ReceiverSocket = new UdpReceiver(port);
+            }
+        }
+
+        public Receiver(int port,IEncrypter encrypter, bool isTcp = false)
+        {
+            if (isTcp)
+            {
+
+            }
+            else
+            {
+                ReceiverSocket = new UdpReceiver(port, encrypter);
             }
         }
 
