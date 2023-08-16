@@ -40,7 +40,11 @@ namespace CSDTP.Cryptography
             AES.Key = key;
             AES.IV = iV;
         }
-
+        public AesEncrypter(byte[] key)
+        {
+            AES = Aes.Create();
+            AES.Key = key;
+        }
         public void Dispose()
         {
             AES.Dispose();

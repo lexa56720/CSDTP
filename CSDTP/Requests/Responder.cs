@@ -19,13 +19,12 @@ namespace CSDTP.Requests
     public class Responder : IDisposable
     {
         private IEncrypter? Encrypter { get; init; }
-        public bool IsTcp { get; }
 
+        public bool IsTcp { get; }
         public int ListenPort => Receiver.Port;
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
         private Dictionary<Type, object> GetHandlers { get; set; } = new Dictionary<Type, object>();
-
         private Dictionary<Type, object> PostHandlers { get; set; } = new Dictionary<Type, object>();
 
         private QueueProcessor<IPacket> RequestsQueue { get; set; }
@@ -34,8 +33,7 @@ namespace CSDTP.Requests
         private IReceiver Receiver { get; set; }
 
         private MethodInfo SendMethod { get; set; }
-
-        private MethodInfo SendMethodCrypt { get; set; }
+        private MethodInfo SendMethodEncrypt { get; set; }
 
         public Responder(TimeSpan sendersTimeout, int port, bool isTcp = false)
         {
@@ -61,11 +59,25 @@ namespace CSDTP.Requests
 
             IsTcp = isTcp;
         }
+        public Responder(TimeSpan sendersTimeout, int port, IEncrypter encrypter,IEncrypter decrypter, bool isTcp = false)
+        {
+            Encrypter = encrypter;
+            SendMethodsSetup();
+
+            Senders = new LifeTimeController<ISender>(sendersTimeout);
+            RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
+
+
+            Receiver = new Receiver(port < 0 ? 0 : port, decrypter, isTcp);
+            Receiver.DataAppear += RequestAppear;
+
+            IsTcp = isTcp;
+        }
 
         private void SendMethodsSetup()
         {
             SendMethod = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetParameters().Length == 1);
-            SendMethodCrypt = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetParameters().Length == 2);
+            SendMethodEncrypt = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetParameters().Length == 2);
         }
         public void Dispose()
         {
@@ -86,7 +98,6 @@ namespace CSDTP.Requests
             Receiver.Start();
             RequestsQueue.Start();
         }
-
         public void Stop()
         {
             if (!IsRunning)
@@ -128,7 +139,6 @@ namespace CSDTP.Requests
             }
 
         }
-
         private void HandlePostRequest(IPacket packet, IRequestContainer request, object handler)
         {
             var responseObj = ((Delegate)handler).Method.Invoke(handler, new object[] { request.DataObj });
@@ -171,9 +181,8 @@ namespace CSDTP.Requests
             if (Encrypter == null)
                 result = SendMethod;
             else
-                result = SendMethodCrypt;
+                result = SendMethodEncrypt;
             return result.MakeGenericMethod(type);
         }
-
     }
 }

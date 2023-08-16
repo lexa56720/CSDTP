@@ -62,7 +62,7 @@ namespace Test
 
             while (globalCount < 50)
             {
-                var result = await requester.PostAsync<Message, Message>(new Message("fff " + count++), TimeSpan.FromSeconds(20));
+                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !" + count++), TimeSpan.FromSeconds(20));
 
                 if (stopwatch.ElapsedMilliseconds > 1000)
                 {

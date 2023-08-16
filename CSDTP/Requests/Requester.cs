@@ -24,9 +24,9 @@ namespace CSDTP.Requests
         private IEncrypter? Encrypter { get; init; }
 
         public bool IsAvailable => Sender.IsAvailable && Receiver.IsReceiving;
-
         public IPEndPoint Destination => Sender.Destination;
         public int ReplyPort => Sender.ReplyPort;
+
 
         public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>>();
 
@@ -47,8 +47,16 @@ namespace CSDTP.Requests
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
         }
+        public Requester(IPEndPoint destination, int replyPort, IEncrypter encrypter, IEncrypter decrypter, bool isTcp = false)
+        {
+            Encrypter = encrypter;
 
+            Sender = new Sender(destination, isTcp, replyPort);
 
+            Receiver = new Receiver(ReplyPort, decrypter, isTcp);
+            Receiver.DataAppear += ResponseAppear;
+            Receiver.Start();
+        }
         public Requester(IPEndPoint destination, bool isTcp = false)
         {     
             Receiver = new Receiver(isTcp);
@@ -67,19 +75,23 @@ namespace CSDTP.Requests
 
             Sender = new Sender(destination, isTcp, Receiver.Port);
         }
+        public Requester(IPEndPoint destination, IEncrypter encrypter, IEncrypter decrypter, bool isTcp = false)
+        {
+            Encrypter = encrypter;
+
+            Receiver = new Receiver(decrypter, isTcp);
+            Receiver.DataAppear += ResponseAppear;
+            Receiver.Start();
+
+            Sender = new Sender(destination, isTcp, Receiver.Port);
+        }
+
         public void Dispose()
         {
             Sender.Dispose();
             Receiver.DataAppear -= ResponseAppear;
             Receiver.Dispose();
             Encrypter?.Dispose();
-        }
-
-        private void ResponseAppear(object? sender, IPacket e)
-        {
-            var packet = (IRequestContainer)e.DataObj;
-            if (Requests.TryGetValue(packet.Id, out var request))
-                request.SetResult(e);
         }
 
         public async Task<T> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
@@ -89,8 +101,6 @@ namespace CSDTP.Requests
 
             return await GetResponse<T, U>(container, timeout);
         }
-
-
         private async Task<T> GetResponse<T, U>(RequestContainer<U> container, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
         {
             var resultSource = new TaskCompletionSource<IPacket>();
@@ -107,7 +117,12 @@ namespace CSDTP.Requests
 
             throw new Exception("Request sending error");
         }
-
+        private void ResponseAppear(object? sender, IPacket e)
+        {
+            var packet = (IRequestContainer)e.DataObj;
+            if (Requests.TryGetValue(packet.Id, out var request))
+                request.SetResult(e);
+        }
 
         public async Task<bool> GetAsync<U>(U data) where U : ISerializable<U>
         {
@@ -118,7 +133,6 @@ namespace CSDTP.Requests
             return await Send(container);
         }
 
-
         private async Task<bool> Send<T>(T container) where T : ISerializable<T>
         {
             if (Encrypter == null)
@@ -126,8 +140,6 @@ namespace CSDTP.Requests
             else
                 return await Sender.Send(container, Encrypter);
         }
-
-
 
     }
 }
