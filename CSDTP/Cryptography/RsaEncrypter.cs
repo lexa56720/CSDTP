@@ -39,7 +39,7 @@ namespace CSDTP.Cryptography
 
         public string PrivateKey
         {
-            private get => RSA.ToXmlString(true);
+            get => RSA.ToXmlString(true);
             set
             {
                 RSA.FromXmlString(value);

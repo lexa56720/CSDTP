@@ -59,7 +59,7 @@ namespace CSDTP.Requests
 
             IsTcp = isTcp;
         }
-        public Responder(TimeSpan sendersTimeout, int port, IEncrypter encrypter,IEncrypter decrypter, bool isTcp = false)
+        public Responder(TimeSpan sendersTimeout, int port, IEncrypter encrypter, IEncrypter decrypter, bool isTcp = false)
         {
             Encrypter = encrypter;
             SendMethodsSetup();
@@ -142,6 +142,8 @@ namespace CSDTP.Requests
         private void HandlePostRequest(IPacket packet, IRequestContainer request, object handler)
         {
             var responseObj = ((Delegate)handler).Method.Invoke(handler, new object[] { request.DataObj });
+            if (responseObj == null)
+                return;
 
             var genericType = responseObj.GetType();
             var responseType = typeof(RequestContainer<>).MakeGenericType(genericType);

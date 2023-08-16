@@ -41,6 +41,7 @@ namespace CSDTP.Packets
 
         public void Serialize(BinaryWriter writer)
         {
+           //typeof(Packet<T>).GUID.ToByteArray();
             writer.Write(typeof(Packet<T>).FullName);
 
             writer.Write(ReplyPort);
