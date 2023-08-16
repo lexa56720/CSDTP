@@ -16,6 +16,8 @@ namespace CSDTP.Protocols.Udp
         private UdpClient Listener;
 
         private CancellationTokenSource TokenSource = new CancellationTokenSource();
+
+        public override int Port => ((IPEndPoint)Listener.Client.LocalEndPoint).Port;
         public UdpReceiver(int port) : base(port)
         {
             Listener = new UdpClient(port);
@@ -23,6 +25,15 @@ namespace CSDTP.Protocols.Udp
         public UdpReceiver(int port,IEncrypter encrypter) : base(port,encrypter)
         {
             Listener = new UdpClient(port);
+        }
+
+        public UdpReceiver() : base()
+        {
+            Listener = new UdpClient(0);
+        }
+        public UdpReceiver(IEncrypter encrypter) : base(encrypter)
+        {
+            Listener = new UdpClient(0);
         }
         public override void Close()
         {

@@ -21,7 +21,7 @@ namespace CSDTP.Protocols.Abstracts
 
         public IEncrypter? Decrypter { get; protected set; }
 
-        public int Port { get; }
+        public virtual int Port { get; }
 
         public event EventHandler<IPacket>? DataAppear;
 
@@ -36,6 +36,16 @@ namespace CSDTP.Protocols.Abstracts
             ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
             Decrypter = decrypter;
         }
+        public BaseReceiver()
+        {
+            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
+        }
+        public BaseReceiver(IEncrypter decrypter)
+        {
+            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
+            Decrypter = decrypter;
+        }
+
         public abstract void Dispose();
         public abstract void Close();
 

@@ -30,7 +30,7 @@ namespace CSDTP.Cryptography
         }
         public string PublicKey
         {
-            private get => RSA.ToXmlString(false);
+            get => RSA.ToXmlString(false);
             set
             {
                 RSA.FromXmlString(value);

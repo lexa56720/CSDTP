@@ -23,25 +23,33 @@ namespace CSDTP.Protocols
         public Receiver(int port, bool isTcp = false)
         {
             if (isTcp)
-            {
-
-            }
+                throw new NotImplementedException("TCP NOT IMPLEMENTED");
             else
-            {
                 ReceiverSocket = new UdpReceiver(port);
-            }
         }
 
-        public Receiver(int port,IEncrypter encrypter, bool isTcp = false)
+        public Receiver(int port, IEncrypter encrypter, bool isTcp = false)
         {
             if (isTcp)
-            {
-
-            }
+                throw new NotImplementedException("TCP NOT IMPLEMENTED");
             else
-            {
                 ReceiverSocket = new UdpReceiver(port, encrypter);
-            }
+        }
+        public Receiver(bool isTcp = false)
+        {
+            if (isTcp)
+                throw new NotImplementedException("TCP NOT IMPLEMENTED");
+            else
+                ReceiverSocket = new UdpReceiver();
+
+        }
+
+        public Receiver(IEncrypter encrypter, bool isTcp = false)
+        {
+            if (isTcp)
+                throw new NotImplementedException("TCP NOT IMPLEMENTED");
+            else
+                ReceiverSocket = new UdpReceiver(encrypter);
         }
 
         public event EventHandler<IPacket> DataAppear

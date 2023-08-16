@@ -25,6 +25,9 @@ namespace CSDTP.Requests
 
         public bool IsAvailable => Sender.IsAvailable && Receiver.IsReceiving;
 
+        public IPEndPoint Destination => Sender.Destination;
+        public int ReplyPort => Sender.ReplyPort;
+
         public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>>();
 
         public Requester(IPEndPoint destination, int replyPort, bool isTcp = false)
@@ -43,6 +46,33 @@ namespace CSDTP.Requests
             Receiver = new Receiver(ReplyPort, encrypter, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
+        }
+
+
+        public Requester(IPEndPoint destination, bool isTcp = false)
+        {     
+            Receiver = new Receiver(isTcp);
+            Receiver.DataAppear += ResponseAppear;
+            Receiver.Start();
+
+            Sender = new Sender(destination, isTcp, Receiver.Port);
+        }
+        public Requester(IPEndPoint destination, IEncrypter encrypter, bool isTcp = false)
+        {
+            Encrypter = encrypter;
+           
+            Receiver = new Receiver(encrypter, isTcp);
+            Receiver.DataAppear += ResponseAppear;
+            Receiver.Start();
+
+            Sender = new Sender(destination, isTcp, Receiver.Port);
+        }
+        public void Dispose()
+        {
+            Sender.Dispose();
+            Receiver.DataAppear -= ResponseAppear;
+            Receiver.Dispose();
+            Encrypter?.Dispose();
         }
 
         private void ResponseAppear(object? sender, IPacket e)
@@ -97,15 +127,7 @@ namespace CSDTP.Requests
                 return await Sender.Send(container, Encrypter);
         }
 
-        public void Dispose()
-        {
-            Sender.Dispose();
-            Receiver.DataAppear -= ResponseAppear;
-            Receiver.Dispose();
-            Encrypter?.Dispose();
-        }
 
-        public IPEndPoint Destination => Sender.Destination;
-        public int ReplyPort => Sender.ReplyPort;
+
     }
 }
