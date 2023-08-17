@@ -20,6 +20,22 @@ namespace CSDTP.Protocols.Udp
             Client.Connect(Destination);
         }
 
+        public UdpSender(IPEndPoint destination) : base(destination)
+        {
+            Client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+            Client.Connect(Destination);
+        }
+        public UdpSender(IPEndPoint destination,IEncryptProvider encryptProvider, int replyPort) : base(destination, encryptProvider, replyPort)
+        {
+            Client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+            Client.Connect(Destination);
+        }
+
+        public UdpSender(IPEndPoint destination, IEncryptProvider encryptProvider) : base(destination, encryptProvider)
+        {
+            Client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+            Client.Connect(Destination);
+        }
         public override void Dispose()
         {
             IsAvailable = false;

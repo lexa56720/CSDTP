@@ -16,6 +16,13 @@ namespace CSDTP.Protocols.Abstracts
         public int ReplyPort { get; }
 
         public bool IsAvailable { get; protected set; } = true;
+        public IEncryptProvider? EncryptProvider { get; set; }
+
+        public BaseSender(IPEndPoint destination)
+        {
+            Destination = destination;
+            ReplyPort = 0;
+        }
 
         public BaseSender(IPEndPoint destination, int replyPort = -1)
         {
@@ -23,15 +30,28 @@ namespace CSDTP.Protocols.Abstracts
             ReplyPort = replyPort;
         }
 
+        public BaseSender(IPEndPoint destination, IEncryptProvider encryptProvider)
+        {
+            Destination = destination;
+            EncryptProvider = encryptProvider;
+            ReplyPort = 0;
+        }
+
+        public BaseSender(IPEndPoint destination, IEncryptProvider encryptProvider, int replyPort = -1)
+        {
+            Destination = destination;
+            EncryptProvider = encryptProvider;
+            ReplyPort = replyPort;
+        }
+
         public abstract void Dispose();
 
         public async Task<bool> Send<T>(T data) where T : ISerializable<T>
         {
-            return await SendBytes(GetBytes(data));
-        }
-        public async Task<bool> Send<T>(T data, IEncrypter encrypter) where T : ISerializable<T>
-        {
-            return await SendBytes(GetBytes(data, encrypter));
+            if (EncryptProvider == null)
+                return await SendBytes(GetBytes(data));
+            else
+                return await SendBytes(GetBytes(data, EncryptProvider));
         }
 
         protected abstract Task<bool> SendBytes(byte[] bytes);
@@ -41,25 +61,16 @@ namespace CSDTP.Protocols.Abstracts
             using var ms = new MemoryStream();
             using var writer = new BinaryWriter(ms);
             GetPacket(data).Serialize(writer);
-            return AppendToStart(ms.ToArray(), 0); 
+            return ms.ToArray();
         }
 
-        private byte[] GetBytes<T>(T data, IEncrypter encrypter) where T : ISerializable<T>
+        private byte[] GetBytes<T>(T data, IEncryptProvider encryptProvider) where T : ISerializable<T>
         {
             using var ms = new MemoryStream();
             using var writer = new BinaryWriter(ms);
-            GetPacket(data).Serialize(writer);
-     
-            var bytes = ms.ToArray();
-            return AppendToStart(encrypter.Crypt(bytes),1);
-        }
+            GetPacket(data).Serialize(writer, encryptProvider);
 
-        private byte[] AppendToStart(byte[] array,byte value)
-        {
-            byte[] newArray = new byte[array.Length + 1];
-            newArray[0] = value;                               
-            Array.Copy(array, 0, newArray, 1, array.Length);
-            return newArray;
+            return ms.ToArray();
         }
 
         private Packet<T> GetPacket<T>(T data) where T : ISerializable<T>

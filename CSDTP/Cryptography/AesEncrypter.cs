@@ -10,6 +10,7 @@ namespace CSDTP.Cryptography
     public class AesEncrypter : IEncrypter
     {
         private Aes AES { get; set; }
+        public CryptMethod CryptMethod => CryptMethod.Aes;
 
         public byte[] Key
         {
@@ -28,6 +29,7 @@ namespace CSDTP.Cryptography
                 AES.IV = value;
             }
         }
+
 
         public AesEncrypter()
         {

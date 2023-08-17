@@ -20,6 +20,12 @@ namespace CSDTP.Protocols
 
         public int Port => ReceiverSocket.Port;
 
+        public IEncryptProvider? DecryptProvider 
+        { 
+            get => ReceiverSocket.DecryptProvider;
+            set => ReceiverSocket.DecryptProvider = value;
+        }
+
         public Receiver(int port, bool isTcp = false)
         {
             if (isTcp)
@@ -28,12 +34,12 @@ namespace CSDTP.Protocols
                 ReceiverSocket = new UdpReceiver(port);
         }
 
-        public Receiver(int port, IEncrypter encrypter, bool isTcp = false)
+        public Receiver(int port, IEncryptProvider encryptProvider, bool isTcp = false)
         {
             if (isTcp)
                 throw new NotImplementedException("TCP NOT IMPLEMENTED");
             else
-                ReceiverSocket = new UdpReceiver(port, encrypter);
+                ReceiverSocket = new UdpReceiver(port, encryptProvider);
         }
         public Receiver(bool isTcp = false)
         {
@@ -44,12 +50,12 @@ namespace CSDTP.Protocols
 
         }
 
-        public Receiver(IEncrypter encrypter, bool isTcp = false)
+        public Receiver(IEncryptProvider encryptProvider, bool isTcp = false)
         {
             if (isTcp)
                 throw new NotImplementedException("TCP NOT IMPLEMENTED");
             else
-                ReceiverSocket = new UdpReceiver(encrypter);
+                ReceiverSocket = new UdpReceiver(encryptProvider);
         }
 
         public event EventHandler<IPacket> DataAppear

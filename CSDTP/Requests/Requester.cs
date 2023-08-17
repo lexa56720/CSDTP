@@ -21,7 +21,7 @@ namespace CSDTP.Requests
         private ISender Sender { get; set; }
         private IReceiver Receiver { get; set; }
 
-        private IEncrypter? Encrypter { get; init; }
+        private IEncryptProvider EncryptProvider { get; init; }
 
         public bool IsAvailable => Sender.IsAvailable && Receiver.IsReceiving;
         public IPEndPoint Destination => Sender.Destination;
@@ -32,58 +32,58 @@ namespace CSDTP.Requests
 
         public Requester(IPEndPoint destination, int replyPort, bool isTcp = false)
         {
-            Sender = new Sender(destination, isTcp, replyPort);
+            Sender = new Sender(destination, replyPort, isTcp);
 
             Receiver = new Receiver(ReplyPort, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
         }
-        public Requester(IPEndPoint destination, int replyPort, IEncrypter encrypter, bool isTcp = false)
+        public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encrypter, bool isTcp = false)
         {
-            Encrypter = encrypter;
-            Sender = new Sender(destination, isTcp, replyPort);
+            EncryptProvider = encrypter;
+            Sender = new Sender(destination, replyPort, isTcp);
 
             Receiver = new Receiver(ReplyPort, encrypter, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
         }
-        public Requester(IPEndPoint destination, int replyPort, IEncrypter encrypter, IEncrypter decrypter, bool isTcp = false)
+        public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encrypter, IEncryptProvider decrypter, bool isTcp = false)
         {
-            Encrypter = encrypter;
+            EncryptProvider = encrypter;
 
-            Sender = new Sender(destination, isTcp, replyPort);
+            Sender = new Sender(destination,encrypter, replyPort, isTcp);
 
             Receiver = new Receiver(ReplyPort, decrypter, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
         }
         public Requester(IPEndPoint destination, bool isTcp = false)
-        {     
+        {
             Receiver = new Receiver(isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
 
-            Sender = new Sender(destination, isTcp, Receiver.Port);
+            Sender = new Sender(destination, Receiver.Port, isTcp);
         }
-        public Requester(IPEndPoint destination, IEncrypter encrypter, bool isTcp = false)
+        public Requester(IPEndPoint destination, IEncryptProvider encrypter, bool isTcp = false)
         {
-            Encrypter = encrypter;
-           
+            EncryptProvider = encrypter;
+
             Receiver = new Receiver(encrypter, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
 
-            Sender = new Sender(destination, isTcp, Receiver.Port);
+            Sender = new Sender(destination,encrypter, Receiver.Port, isTcp);
         }
-        public Requester(IPEndPoint destination, IEncrypter encrypter, IEncrypter decrypter, bool isTcp = false)
+        public Requester(IPEndPoint destination, IEncryptProvider encrypter, IEncryptProvider decryptProvider, bool isTcp = false)
         {
-            Encrypter = encrypter;
+            EncryptProvider = encrypter;
 
-            Receiver = new Receiver(decrypter, isTcp);
+            Receiver = new Receiver(decryptProvider, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
 
-            Sender = new Sender(destination, isTcp, Receiver.Port);
+            Sender = new Sender(destination, encrypter, Receiver.Port, isTcp);
         }
 
         public void Dispose()
@@ -91,13 +91,13 @@ namespace CSDTP.Requests
             Sender.Dispose();
             Receiver.DataAppear -= ResponseAppear;
             Receiver.Dispose();
-            Encrypter?.Dispose();
+            EncryptProvider?.Dispose();
         }
 
         public async Task<T> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
         {
             var container = new RequestContainer<U>(data, RequestType.Post);
-            await Send(container);
+            await Sender.Send(container);
 
             return await GetResponse<T, U>(container, timeout);
         }
@@ -130,16 +130,7 @@ namespace CSDTP.Requests
                 throw new Exception("Request sending error");
 
             var container = new RequestContainer<U>(data, RequestType.Get);
-            return await Send(container);
+            return await Sender.Send(container);
         }
-
-        private async Task<bool> Send<T>(T container) where T : ISerializable<T>
-        {
-            if (Encrypter == null)
-                return await Sender.Send(container);
-            else
-                return await Sender.Send(container, Encrypter);
-        }
-
     }
 }

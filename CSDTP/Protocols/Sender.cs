@@ -18,21 +18,44 @@ namespace CSDTP.Protocols
 
         public bool IsAvailable => SenderSocket.IsAvailable;
 
+        public IEncryptProvider? EncryptProvider
+        {
+            get => SenderSocket.EncryptProvider;
+            set => SenderSocket.EncryptProvider = value;
+        }
+
         private BaseSender SenderSocket;
 
-        public Sender(IPEndPoint destination, bool isTcp = false, int replyPort = -1)
+        public Sender(IPEndPoint destination, bool isTcp = false)
+        {
+            if (isTcp)
+                throw new NotImplementedException();
+            else
+                SenderSocket = new UdpSender(destination);
+        }
+        public Sender(IPEndPoint destination, int replyPort, bool isTcp = false)
+        {
+            if (isTcp)
+                throw new NotImplementedException();
+            else
+                SenderSocket = new UdpSender(destination, replyPort);
+        }
+        public Sender(IPEndPoint destination, IEncryptProvider encryptProvider, bool isTcp = false)
+        {
+            if (isTcp)
+                throw new NotImplementedException();
+            else
+                SenderSocket = new UdpSender(destination, encryptProvider);
+        }
+        public Sender(IPEndPoint destination, IEncryptProvider encryptProvider, int replyPort, bool isTcp = false)
         {
 
             if (isTcp)
-            {
-
-            }
+                throw new NotImplementedException();
             else
-            {
-                SenderSocket = new UdpSender(destination, replyPort);
-            }
-
+                SenderSocket = new UdpSender(destination,encryptProvider, replyPort);
         }
+
 
         public void Dispose()
         {
@@ -48,11 +71,6 @@ namespace CSDTP.Protocols
         public Task<bool> Send<T>(T data) where T : ISerializable<T>
         {
             return SenderSocket.Send(data);
-        }
-
-        public Task<bool> Send<T>(T data, IEncrypter encrypter) where T : ISerializable<T>
-        {
-            return SenderSocket.Send(data, encrypter);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace CSDTP.Requests
 {
     public class Responder : IDisposable
     {
-        private IEncrypter? Encrypter { get; init; }
+        private IEncryptProvider? EncryptProvider { get; init; }
 
         public bool IsTcp { get; }
         public int ListenPort => Receiver.Port;
@@ -32,53 +32,42 @@ namespace CSDTP.Requests
         private LifeTimeController<ISender> Senders { get; set; }
         private IReceiver Receiver { get; set; }
 
-        private MethodInfo SendMethod { get; set; }
-        private MethodInfo SendMethodEncrypt { get; set; }
-
+        private MethodInfo SendMethod = typeof(ISender).GetMethods().First(m=>m.Name==nameof(ISender.Send));
         public Responder(TimeSpan sendersTimeout, int port, bool isTcp = false)
         {
-            SendMethodsSetup();
-
             Senders = new LifeTimeController<ISender>(sendersTimeout);
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
             Receiver = new Receiver(port < 0 ? 0 : port, isTcp);
             Receiver.DataAppear += RequestAppear;
             IsTcp = isTcp;
         }
-        public Responder(TimeSpan sendersTimeout, int port, IEncrypter encrypter, bool isTcp = false)
+        public Responder(TimeSpan sendersTimeout, int port, IEncryptProvider encryptProvider, bool isTcp = false)
         {
-            Encrypter = encrypter;
-            SendMethodsSetup();
+            EncryptProvider = encryptProvider;
 
             Senders = new LifeTimeController<ISender>(sendersTimeout);
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
 
 
-            Receiver = new Receiver(port < 0 ? 0 : port, encrypter, isTcp);
+            Receiver = new Receiver(port < 0 ? 0 : port, encryptProvider, isTcp);
             Receiver.DataAppear += RequestAppear;
 
             IsTcp = isTcp;
         }
-        public Responder(TimeSpan sendersTimeout, int port, IEncrypter encrypter, IEncrypter decrypter, bool isTcp = false)
+        public Responder(TimeSpan sendersTimeout, int port, IEncryptProvider encrypterProvider, IEncryptProvider decryptProvider, bool isTcp = false)
         {
-            Encrypter = encrypter;
-            SendMethodsSetup();
+            EncryptProvider = encrypterProvider;
 
             Senders = new LifeTimeController<ISender>(sendersTimeout);
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
 
 
-            Receiver = new Receiver(port < 0 ? 0 : port, decrypter, isTcp);
+            Receiver = new Receiver(port < 0 ? 0 : port, decryptProvider, isTcp);
             Receiver.DataAppear += RequestAppear;
 
             IsTcp = isTcp;
         }
 
-        private void SendMethodsSetup()
-        {
-            SendMethod = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetParameters().Length == 1);
-            SendMethodEncrypt = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetParameters().Length == 2);
-        }
         public void Dispose()
         {
             Senders.Stop();
@@ -161,30 +150,18 @@ namespace CSDTP.Requests
             var sender = Senders.Get(s => s.Destination.Equals(destination) && s.IsAvailable);
             if (sender == null)
             {
-                sender = new Sender(destination, IsTcp);
+                sender = GetNewSender(destination);
                 Senders.Add(sender);
             }
-            var method = GetSendMethod(data.GetType());
-            InvokeSendMethod(method, sender, data);
-
+            SendMethod.MakeGenericMethod(data.GetType()).Invoke(sender, new object[] { data });
         }
 
-        private void InvokeSendMethod(MethodInfo method, ISender sender, IRequestContainer data)
+        private ISender GetNewSender(IPEndPoint destination)
         {
-            if (Encrypter == null)
-                method.Invoke(sender, new object[] { data });
+            if (EncryptProvider != null)
+               return new Sender(destination, EncryptProvider, IsTcp);
             else
-                method.Invoke(sender, new object[] { data, Encrypter });
-
-        }
-        private MethodInfo GetSendMethod(Type type)
-        {
-            MethodInfo result;
-            if (Encrypter == null)
-                result = SendMethod;
-            else
-                result = SendMethodEncrypt;
-            return result.MakeGenericMethod(type);
+                return new Sender(destination, IsTcp);
         }
     }
 }

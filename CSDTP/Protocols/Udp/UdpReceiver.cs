@@ -22,7 +22,7 @@ namespace CSDTP.Protocols.Udp
         {
             Listener = new UdpClient(port);
         }
-        public UdpReceiver(int port,IEncrypter encrypter) : base(port,encrypter)
+        public UdpReceiver(int port, IEncryptProvider encryptProvider) : base(port, encryptProvider)
         {
             Listener = new UdpClient(port);
         }
@@ -31,7 +31,7 @@ namespace CSDTP.Protocols.Udp
         {
             Listener = new UdpClient(0);
         }
-        public UdpReceiver(IEncrypter encrypter) : base(encrypter)
+        public UdpReceiver(IEncryptProvider encryptProvider) : base(encryptProvider)
         {
             Listener = new UdpClient(0);
         }

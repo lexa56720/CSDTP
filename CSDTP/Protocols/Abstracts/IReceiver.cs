@@ -1,4 +1,5 @@
-﻿using CSDTP.Packets;
+﻿using CSDTP.Cryptography;
+using CSDTP.Packets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,7 @@ namespace CSDTP.Protocols.Abstracts
     internal interface IReceiver : IDisposable
     {
         public event EventHandler<IPacket> DataAppear;
+        public IEncryptProvider? DecryptProvider { get;  set; }
         public bool IsReceiving { get; }
         public int Port { get; }
 

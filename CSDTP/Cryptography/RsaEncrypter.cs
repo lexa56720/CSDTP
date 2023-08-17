@@ -12,6 +12,7 @@ namespace CSDTP.Cryptography
     {
         private RSA RSA { get; set; }
 
+        public CryptMethod CryptMethod => CryptMethod.Rsa;
 
         public RsaEncrypter()
         {
@@ -45,6 +46,7 @@ namespace CSDTP.Cryptography
                 RSA.FromXmlString(value);
             }
         }
+
 
         public byte[] Crypt(byte[] data)
         {

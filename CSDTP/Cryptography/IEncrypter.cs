@@ -6,6 +6,12 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Cryptography
 {
+    public enum CryptMethod
+    {
+        None,
+        Rsa,
+        Aes,
+    }
     public interface IEncrypter : IDisposable
     {
         public byte[] Crypt(byte[] data);
@@ -15,5 +21,7 @@ namespace CSDTP.Cryptography
         public byte[] Crypt(byte[] data,int offset,int count);
 
         public byte[] Decrypt(byte[] data, int offset, int count);
+
+        public CryptMethod CryptMethod { get; }
     }
 }

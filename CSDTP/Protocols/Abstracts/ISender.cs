@@ -11,12 +11,12 @@ namespace CSDTP.Protocols.Abstracts
     internal interface ISender : IDisposable
     {
         public IPEndPoint Destination { get; }
+
+        public IEncryptProvider? EncryptProvider { get; set; }
+
         public int ReplyPort { get; }
         public bool IsAvailable { get; }
         public void Close();
         public Task<bool> Send<T>(T data) where T : ISerializable<T>;
-
-        public Task<bool> Send<T>(T data,IEncrypter encrypter) where T : ISerializable<T>;
-
     }
 }

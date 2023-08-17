@@ -49,10 +49,10 @@ namespace Test
         public static async Task TestPost()
         {
             //using var crypter = new RsaEncrypter();
-            using var crypter = new AesEncrypter();
+            using var crypter =new SimpleEncryptProvider(  new RsaEncrypter());
 
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666),crypter);
-            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666, crypter);
+            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666));
+            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666);
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
 
@@ -64,6 +64,7 @@ namespace Test
             {
                 var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !" + count++), TimeSpan.FromSeconds(20));
 
+                Console.WriteLine(result.Text);
                 if (stopwatch.ElapsedMilliseconds > 1000)
                 {
                     Console.Clear();
