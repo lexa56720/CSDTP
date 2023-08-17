@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Cryptography
+namespace CSDTP.Cryptography.Algorithms
 {
     public enum CryptMethod
     {
@@ -18,7 +18,7 @@ namespace CSDTP.Cryptography
 
         public byte[] Decrypt(byte[] data);
 
-        public byte[] Crypt(byte[] data,int offset,int count);
+        public byte[] Crypt(byte[] data, int offset, int count);
 
         public byte[] Decrypt(byte[] data, int offset, int count);
 

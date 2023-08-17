@@ -1,4 +1,4 @@
-﻿using CSDTP.Cryptography;
+﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Utils;
 using System;
@@ -95,7 +95,6 @@ namespace CSDTP.Protocols.Abstracts
             }
 
         }
-
 
         private void HandleData(Tuple<byte[], IPAddress> packetInfo)
         {

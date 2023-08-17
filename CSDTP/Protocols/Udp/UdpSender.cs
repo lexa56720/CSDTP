@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using CSDTP.Cryptography;
+using CSDTP.Cryptography.Providers;
 using CSDTP.Protocols.Abstracts;
 
 namespace CSDTP.Protocols.Udp

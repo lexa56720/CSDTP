@@ -1,11 +1,12 @@
-﻿using CSDTP.Packets;
+﻿using CSDTP.Cryptography.Algorithms;
+using CSDTP.Packets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Cryptography
+namespace CSDTP.Cryptography.Providers
 {
     public class SimpleEncryptProvider : IEncryptProvider
     {

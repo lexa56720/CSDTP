@@ -6,7 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Cryptography
+namespace CSDTP.Cryptography.Algorithms
 {
     public class RsaEncrypter : IEncrypter
     {

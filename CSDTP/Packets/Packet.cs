@@ -1,4 +1,5 @@
-﻿using CSDTP.Cryptography;
+﻿using CSDTP.Cryptography.Algorithms;
+using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using System;
 using System.Collections.Generic;

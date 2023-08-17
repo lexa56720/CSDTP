@@ -1,4 +1,4 @@
-﻿using CSDTP.Cryptography;
+﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Protocols.Udp;
 using System;

@@ -1,5 +1,7 @@
 ﻿using CSDTP;
 using CSDTP.Cryptography;
+using CSDTP.Cryptography.Algorithms;
+using CSDTP.Cryptography.Providers;
 using CSDTP.Protocols;
 using CSDTP.Requests;
 using System.Diagnostics;
@@ -51,8 +53,8 @@ namespace Test
             //using var crypter = new RsaEncrypter();
             using var crypter =new SimpleEncryptProvider(  new RsaEncrypter());
 
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666));
-            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666);
+            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666),crypter);
+            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666, crypter);
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
 

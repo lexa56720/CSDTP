@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Cryptography
+namespace CSDTP.Cryptography.Algorithms
 {
     public class AesEncrypter : IEncrypter
     {
