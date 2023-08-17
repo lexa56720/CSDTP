@@ -2,6 +2,7 @@
 using CSDTP.Cryptography;
 using CSDTP.Cryptography.Algorithms;
 using CSDTP.Cryptography.Providers;
+using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Requests;
 using System.Diagnostics;
@@ -80,7 +81,7 @@ namespace Test
         }
 
         static int counter = 0;
-        static Message Modify(Message msg)
+        static Message Modify(Message msg,IPacketInfo info)
         {
             return new Message(msg.Text + " " + counter++);
         }

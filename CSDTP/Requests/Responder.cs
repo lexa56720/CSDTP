@@ -32,7 +32,7 @@ namespace CSDTP.Requests
         private LifeTimeController<ISender> Senders { get; set; }
         private IReceiver Receiver { get; set; }
 
-        private MethodInfo SendMethod = typeof(ISender).GetMethods().First(m=>m.Name==nameof(ISender.Send));
+        private MethodInfo SendMethod = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send));
         public Responder(TimeSpan sendersTimeout, int port, bool isTcp = false)
         {
             Senders = new LifeTimeController<ISender>(sendersTimeout);
@@ -106,6 +106,15 @@ namespace CSDTP.Requests
             PostHandlers.Add(typeof(T), action);
         }
 
+        public void RegisterGetHandler<T>(Action<T, IPacketInfo> action)
+        {
+            GetHandlers.Add(typeof(T), action);
+        }
+        public void RegisterPostHandler<T, U>(Func<T, IPacketInfo, U> action) where U : ISerializable<U>
+        {
+            PostHandlers.Add(typeof(T), action);
+        }
+
         private void RequestAppear(object? sender, IPacket e)
         {
             RequestsQueue.Add(e);
@@ -120,7 +129,7 @@ namespace CSDTP.Requests
                     HandlePostRequest(packet, request, handlerFunc);
 
                 else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out handlerFunc))
-                    HandleGetRequest(request, handlerFunc);
+                    HandleGetRequest(packet, request, handlerFunc);
             }
             catch (Exception e)
             {
@@ -130,7 +139,7 @@ namespace CSDTP.Requests
         }
         private void HandlePostRequest(IPacket packet, IRequestContainer request, object handler)
         {
-            var responseObj = ((Delegate)handler).Method.Invoke(handler, new object[] { request.DataObj });
+            var responseObj = InvokeMethod(request,packet,handler);
             if (responseObj == null)
                 return;
 
@@ -140,9 +149,19 @@ namespace CSDTP.Requests
             var response = (IRequestContainer)Activator.CreateInstance(responseType, responseObj, request.Id, RequestType.Response);
             Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort));
         }
-        private void HandleGetRequest(IRequestContainer request, object handler)
+        private void HandleGetRequest(IPacket packet, IRequestContainer request,object handler)
         {
-            ((Delegate)handler).Method.Invoke(handler, new object[] { request.DataObj });
+            InvokeMethod(request, packet, handler);
+        }
+
+        private object? InvokeMethod(IRequestContainer request, IPacketInfo packetInfo, object handler)
+        {
+            var method = ((Delegate)handler).Method;
+            if (method.GetParameters().Length == 1)
+                return method.Invoke(handler, new object[] { request.DataObj });
+            else
+                return method.Invoke(handler, new object[] { request.DataObj,packetInfo });
+
         }
 
         private void Reply(IRequestContainer data, IPEndPoint destination)
@@ -159,7 +178,7 @@ namespace CSDTP.Requests
         private ISender GetNewSender(IPEndPoint destination)
         {
             if (EncryptProvider != null)
-               return new Sender(destination, EncryptProvider, IsTcp);
+                return new Sender(destination, EncryptProvider, IsTcp);
             else
                 return new Sender(destination, IsTcp);
         }

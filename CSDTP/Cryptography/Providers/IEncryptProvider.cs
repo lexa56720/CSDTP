@@ -11,9 +11,9 @@ namespace CSDTP.Cryptography.Providers
     public interface IEncryptProvider : IDisposable
     {
 
-        public IEncrypter GetEncrypter(IPacket packet);
+        public IEncrypter GetEncrypter(IPacketInfo packet);
 
 
-        public IEncrypter GetDecrypter(IPacket packet);
+        public IEncrypter GetDecrypter(IPacketInfo packet);
     }
 }

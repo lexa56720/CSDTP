@@ -23,12 +23,12 @@ namespace CSDTP.Cryptography.Providers
             Encrypter.Dispose();
         }
 
-        public IEncrypter GetDecrypter(IPacket packet)
+        public IEncrypter GetDecrypter(IPacketInfo packet)
         {
             return Encrypter;
         }
 
-        public IEncrypter GetEncrypter(IPacket packet)
+        public IEncrypter GetEncrypter(IPacketInfo packet)
         {
             return Encrypter;
         }
