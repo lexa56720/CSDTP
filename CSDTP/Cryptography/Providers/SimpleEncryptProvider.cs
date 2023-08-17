@@ -10,7 +10,6 @@ namespace CSDTP.Cryptography.Providers
 {
     public class SimpleEncryptProvider : IEncryptProvider
     {
-
         public SimpleEncryptProvider(IEncrypter encrypter)
         {
             Encrypter = encrypter;
@@ -23,12 +22,17 @@ namespace CSDTP.Cryptography.Providers
             Encrypter.Dispose();
         }
 
-        public IEncrypter GetDecrypter(IPacketInfo packet)
+        public void DisposeEncryptor(IEncrypter encryptor)
+        {
+            return;
+        }
+
+        public IEncrypter? GetDecrypter(IPacketInfo packet)
         {
             return Encrypter;
         }
 
-        public IEncrypter GetEncrypter(IPacketInfo packet)
+        public IEncrypter? GetEncrypter(IPacketInfo packet)
         {
             return Encrypter;
         }

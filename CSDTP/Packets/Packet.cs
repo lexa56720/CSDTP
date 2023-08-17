@@ -108,12 +108,14 @@ namespace CSDTP.Packets
         private T DecryptData<T>(BinaryReader reader, IEncryptProvider encryptProvider) where T : ISerializable<T>
         {
             var crypter = encryptProvider.GetEncrypter(this);
+            ArgumentNullException.ThrowIfNull(crypter);
 
             var ms = (MemoryStream)reader.BaseStream;
 
             var bytes = ms.ToArray();
 
             var decrypted = crypter.Decrypt(bytes, (int)ms.Position, (int)(ms.Length - ms.Position));
+            encryptProvider.DisposeEncryptor(crypter);
 
             using var decryptedMS = new MemoryStream(decrypted);
             using var br = new BinaryReader(decryptedMS);
