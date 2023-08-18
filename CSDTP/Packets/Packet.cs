@@ -35,12 +35,12 @@ namespace CSDTP.Packets
         {
             Data = data;
             IsHasData = true;
-            TypeOfPacket = typeof(Packet<T>);
+            TypeOfPacket = GetType();
         }
 
         public Packet()
         {
-            TypeOfPacket = typeof(Packet<T>);
+            TypeOfPacket = GetType();
         }
 
         public void Serialize(BinaryWriter writer, IEncryptProvider encryptProvider)
@@ -58,12 +58,17 @@ namespace CSDTP.Packets
 
         private void SerializePacketHeaders(BinaryWriter writer)
         {
-            writer.Write(typeof(Packet<T>).FullName);
-
+            writer.Write(TypeOfPacket.AssemblyQualifiedName);
+            SerializeCustomData(writer);
             writer.Write(ReplyPort);
             writer.Write(SendTime.ToBinary());
 
             writer.Write(IsHasData);
+        }
+
+        protected virtual void SerializeCustomData(BinaryWriter writer)
+        {
+
         }
         private void CryptData(BinaryWriter writer, IEncryptProvider encryptProvider)
         {
@@ -79,10 +84,16 @@ namespace CSDTP.Packets
         }
         private void DeserializePacketHeaders(BinaryReader reader)
         {
+            DeserializeCustomData(reader);
             ReplyPort = reader.ReadInt32();
             SendTime = DateTime.FromBinary(reader.ReadInt64());
             CryptMethod = (CryptMethod)reader.ReadByte();
             IsHasData = reader.ReadBoolean();
+        }
+
+        protected virtual void DeserializeCustomData(BinaryReader reader)
+        {
+
         }
         public IPacket Deserialize(BinaryReader reader, IEncryptProvider encryptProvider)
         {

@@ -78,7 +78,9 @@ namespace CSDTP.Protocols.Abstracts
             {
                 using var reader = new BinaryReader(new MemoryStream(bytes));
 
-                var packet = (IPacket)Activator.CreateInstance(Type.GetType(reader.ReadString()));
+                var s = reader.ReadString();
+                var t = Type.GetType(s);
+                var packet = (IPacket)Activator.CreateInstance(t);
 
                 if (DecryptProvider != null)
                     packet.Deserialize(reader, DecryptProvider);

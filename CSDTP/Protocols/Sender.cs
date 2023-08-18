@@ -1,4 +1,5 @@
 ﻿using CSDTP.Cryptography.Providers;
+using CSDTP.Packets;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Protocols.Udp;
 using System;
@@ -71,6 +72,13 @@ namespace CSDTP.Protocols
         public Task<bool> Send<T>(T data) where T : ISerializable<T>
         {
             return SenderSocket.Send(data);
+        }
+
+        public Task<bool> Send<T, U>(T data)
+            where T : ISerializable<T>
+            where U : Packet<T>, new()
+        {
+            return ((ISender)SenderSocket).Send<T, U>(data);
         }
     }
 }

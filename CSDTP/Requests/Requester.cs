@@ -21,6 +21,8 @@ namespace CSDTP.Requests
         private ISender Sender { get; set; }
         private IReceiver Receiver { get; set; }
 
+
+        private Type? PacketType = null;
         private IEncryptProvider EncryptProvider { get; init; }
 
         public bool IsAvailable => Sender.IsAvailable && Receiver.IsReceiving;
@@ -51,7 +53,7 @@ namespace CSDTP.Requests
         {
             EncryptProvider = encrypter;
 
-            Sender = new Sender(destination,encrypter, replyPort, isTcp);
+            Sender = new Sender(destination, encrypter, replyPort, isTcp);
 
             Receiver = new Receiver(ReplyPort, decrypter, isTcp);
             Receiver.DataAppear += ResponseAppear;
@@ -73,7 +75,7 @@ namespace CSDTP.Requests
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
 
-            Sender = new Sender(destination,encrypter, Receiver.Port, isTcp);
+            Sender = new Sender(destination, encrypter, Receiver.Port, isTcp);
         }
         public Requester(IPEndPoint destination, IEncryptProvider encrypter, IEncryptProvider decryptProvider, bool isTcp = false)
         {
@@ -94,10 +96,21 @@ namespace CSDTP.Requests
             EncryptProvider?.Dispose();
         }
 
+
+        public bool SetPacketType(Type type)
+        {
+            if (type.BaseType.GUID==typeof(Packet<>).GUID)
+            {
+                PacketType = type;
+                return true;
+            }
+            return false;              
+        }
+
         public async Task<T> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
         {
             var container = new RequestContainer<U>(data, RequestType.Post);
-            await Sender.Send(container);
+            await Send(container);
 
             return await GetResponse<T, U>(container, timeout);
         }
@@ -132,5 +145,17 @@ namespace CSDTP.Requests
             var container = new RequestContainer<U>(data, RequestType.Get);
             return await Sender.Send(container);
         }
+
+        private async Task<bool> Send<U>(RequestContainer<U> container) where U : ISerializable<U>
+        {
+            if (PacketType != null)
+            {
+                var method = Sender.GetType().GetMethods().First(m => m.GetGenericArguments().Length == 2);
+                var send = method.MakeGenericMethod(typeof(RequestContainer<U>), PacketType.MakeGenericType(typeof(RequestContainer<U>)));
+                return await (Task<bool>)send.Invoke(Sender, new object[] { container });
+            }
+            return await Sender.Send(container);
+        }
+
     }
 }

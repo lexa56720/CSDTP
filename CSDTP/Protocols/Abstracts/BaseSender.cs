@@ -6,7 +6,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CSDTP.Protocols.Abstracts
 {
@@ -45,38 +44,46 @@ namespace CSDTP.Protocols.Abstracts
         }
 
         public abstract void Dispose();
-
-        public async Task<bool> Send<T>(T data) where T : ISerializable<T>
+        public async Task<bool> Send<T>(T data) where T : ISerializable<T> 
         {
             if (EncryptProvider == null)
-                return await SendBytes(GetBytes(data));
+                return await SendBytes(GetBytes<T, Packet<T>>(data));
             else
-                return await SendBytes(GetBytes(data, EncryptProvider));
+                return await SendBytes(GetBytes<T, Packet<T>>(data, EncryptProvider));
+        }
+        public async Task<bool> Send<T,U>(T data) where T : ISerializable<T> where U : Packet<T>, new()
+        {
+            if (EncryptProvider == null)
+                return await SendBytes(GetBytes<T,U>(data));
+            else
+                return await SendBytes(GetBytes<T, U>(data, EncryptProvider));
         }
 
         protected abstract Task<bool> SendBytes(byte[] bytes);
 
-        private byte[] GetBytes<T>(T data) where T : ISerializable<T>
+        private byte[] GetBytes<T,U>(T data) where T : ISerializable<T> where U : Packet<T>, new()
         {
             using var ms = new MemoryStream();
             using var writer = new BinaryWriter(ms);
-            GetPacket(data).Serialize(writer);
+            GetPacket<T, U>(data).Serialize(writer);
             return ms.ToArray();
         }
 
-        private byte[] GetBytes<T>(T data, IEncryptProvider encryptProvider) where T : ISerializable<T>
+        private byte[] GetBytes<T,U>(T data, IEncryptProvider encryptProvider) where T : ISerializable<T> where U : Packet<T>, new()
         {
             using var ms = new MemoryStream();
             using var writer = new BinaryWriter(ms);
-            GetPacket(data).Serialize(writer, encryptProvider);
+            GetPacket<T,U>(data).Serialize(writer, encryptProvider);
 
             return ms.ToArray();
         }
 
-        private Packet<T> GetPacket<T>(T data) where T : ISerializable<T>
+        private Packet<T> GetPacket<T,U>(T data) where T : ISerializable<T> where U:Packet<T>,new()
         {
-            return new Packet<T>(data)
+            return new U()
             {
+                Data = data,
+                IsHasData=true,
                 ReplyPort = ReplyPort,
                 SendTime = DateTime.Now,
             };
