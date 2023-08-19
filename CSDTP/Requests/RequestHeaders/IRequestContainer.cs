@@ -16,9 +16,9 @@ namespace CSDTP.Requests.RequestHeaders
     {
         public Guid Id { get; set; }
 
-        public Type DataType { get; }
+        public Type DataType { get; set; }
 
-        public object DataObj { get; }
+        public object DataObj { get; set; }
 
         public RequestType RequestType { get; set; }
 

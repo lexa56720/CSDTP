@@ -14,9 +14,19 @@ namespace CSDTP.Requests.RequestHeaders
 
         public RequestType RequestType { get; set; }
 
-        public Type DataType { get; private set; }
+        public Type DataType { get; set; }
 
-        public object DataObj => Data;
+        public object DataObj
+        {
+            get
+            {
+                return Data;
+            }
+            set
+            {
+                Data = (T)value;
+            }
+        }
 
         public RequestContainer(T data, RequestType type)
         {

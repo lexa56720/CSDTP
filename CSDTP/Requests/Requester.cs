@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,7 +31,9 @@ namespace CSDTP.Requests
         public int ReplyPort => Sender.ReplyPort;
 
 
-        public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>>();
+        private MethodInfo SendCustomPacket;
+
+        private ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>>();
 
         public Requester(IPEndPoint destination, int replyPort, bool isTcp = false)
         {
@@ -39,25 +42,30 @@ namespace CSDTP.Requests
             Receiver = new Receiver(ReplyPort, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
+            SetupMethods();
         }
         public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encrypter, bool isTcp = false)
         {
             EncryptProvider = encrypter;
-            Sender = new Sender(destination, replyPort, isTcp);
+           
 
             Receiver = new Receiver(ReplyPort, encrypter, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
+            Sender = new Sender(destination, replyPort, isTcp);
+            SetupMethods();
         }
         public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encrypter, IEncryptProvider decrypter, bool isTcp = false)
         {
             EncryptProvider = encrypter;
 
-            Sender = new Sender(destination, encrypter, replyPort, isTcp);
 
             Receiver = new Receiver(ReplyPort, decrypter, isTcp);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
+
+            Sender = new Sender(destination, encrypter, replyPort, isTcp);
+            SetupMethods();
         }
         public Requester(IPEndPoint destination, bool isTcp = false)
         {
@@ -66,6 +74,7 @@ namespace CSDTP.Requests
             Receiver.Start();
 
             Sender = new Sender(destination, Receiver.Port, isTcp);
+            SetupMethods();
         }
         public Requester(IPEndPoint destination, IEncryptProvider encrypter, bool isTcp = false)
         {
@@ -76,6 +85,7 @@ namespace CSDTP.Requests
             Receiver.Start();
 
             Sender = new Sender(destination, encrypter, Receiver.Port, isTcp);
+            SetupMethods();
         }
         public Requester(IPEndPoint destination, IEncryptProvider encrypter, IEncryptProvider decryptProvider, bool isTcp = false)
         {
@@ -86,6 +96,7 @@ namespace CSDTP.Requests
             Receiver.Start();
 
             Sender = new Sender(destination, encrypter, Receiver.Port, isTcp);
+            SetupMethods();
         }
 
         public void Dispose()
@@ -96,15 +107,19 @@ namespace CSDTP.Requests
             EncryptProvider?.Dispose();
         }
 
+        private void SetupMethods()
+        {
+            SendCustomPacket = Sender.GetType().GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetGenericArguments().Length == 2);
+        }
 
         public bool SetPacketType(Type type)
         {
-            if (type.BaseType.GUID==typeof(Packet<>).GUID)
+            if (type.BaseType !=null && type.BaseType.GUID == typeof(Packet<>).GUID)
             {
                 PacketType = type;
                 return true;
             }
-            return false;              
+            return false;
         }
 
         public async Task<T> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
@@ -150,12 +165,10 @@ namespace CSDTP.Requests
         {
             if (PacketType != null)
             {
-                var method = Sender.GetType().GetMethods().First(m => m.GetGenericArguments().Length == 2);
-                var send = method.MakeGenericMethod(typeof(RequestContainer<U>), PacketType.MakeGenericType(typeof(RequestContainer<U>)));
+                var send = SendCustomPacket.MakeGenericMethod(typeof(RequestContainer<U>), PacketType.MakeGenericType(typeof(RequestContainer<U>)));
                 return await (Task<bool>)send.Invoke(Sender, new object[] { container });
             }
             return await Sender.Send(container);
         }
-
     }
 }

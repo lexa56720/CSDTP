@@ -19,6 +19,8 @@ namespace CSDTP.Protocols.Abstracts
 
         private protected QueueProcessor<Tuple<byte[], IPAddress>> ReceiverQueue;
 
+        private CompiledActivator Activator=new CompiledActivator();
+
         public IEncryptProvider? DecryptProvider { get; set; }
 
         public virtual int Port { get; }
