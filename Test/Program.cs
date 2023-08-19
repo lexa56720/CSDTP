@@ -108,7 +108,7 @@ namespace Test
         {
             return new Message(msg.Text + " " + counter++);
         }
-        static void ModifyGet(Message msg)
+        static void ModifyGet(Message msg, IPacketInfo info)
         {
 
         }

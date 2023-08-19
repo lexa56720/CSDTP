@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CSDTP.Cryptography.Providers;
 using CSDTP.Protocols.Abstracts;
+using CSDTP.Utils;
 
 namespace CSDTP.Protocols.Udp
 {
@@ -51,7 +52,7 @@ namespace CSDTP.Protocols.Udp
         {
             if (!IsAvailable)
                 return false;
-
+            ;
             var sended = await Client.SendAsync(bytes, bytes.Length);
             return sended == bytes.Length;
         }

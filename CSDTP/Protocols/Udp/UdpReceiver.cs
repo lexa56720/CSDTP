@@ -65,7 +65,7 @@ namespace CSDTP.Protocols.Udp
 
                         token.ThrowIfCancellationRequested();
 
-                        ReceiverQueue.Add(new Tuple<byte[], IPAddress>(data.Buffer, data.RemoteEndPoint.Address));
+                        ReceiverQueue.Add(new Tuple<byte[], IPAddress>( data.Buffer, data.RemoteEndPoint.Address));
                     }
                     catch (OperationCanceledException e)
                     {

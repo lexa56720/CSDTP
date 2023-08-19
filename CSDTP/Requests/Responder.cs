@@ -10,6 +10,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -23,8 +24,8 @@ namespace CSDTP.Requests
         public int ListenPort => Receiver.Port;
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
-        private Dictionary<Type, object> GetHandlers { get; set; } = new Dictionary<Type, object>();
-        private Dictionary<Type, object> PostHandlers { get; set; } = new Dictionary<Type, object>();
+        private Dictionary<Type, Action<object,IPacketInfo>> GetHandlers { get; set; } = new Dictionary<Type, Action<object, IPacketInfo>>();
+        private Dictionary<Type, Func<object, IPacketInfo,object>> PostHandlers { get; set; } = new Dictionary<Type, Func<object, IPacketInfo, object>>();
 
         private QueueProcessor<IPacket> RequestsQueue { get; set; }
 
@@ -96,24 +97,22 @@ namespace CSDTP.Requests
             RequestsQueue.Stop();
         }
 
-        public void RegisterGetHandler<T>(Action<T> action)
-        {
-            GetHandlers.Add(typeof(T), action);
-        }
-        public void RegisterPostHandler<T, U>(Func<T, U> action) where U : ISerializable<U>
-        {
-            PostHandlers.Add(typeof(T), action);
-        }
-
         public void RegisterGetHandler<T>(Action<T, IPacketInfo> action)
         {
-            GetHandlers.Add(typeof(T), action);
+            GetHandlers.Add(typeof(T),new Action<object,IPacketInfo>((o,i)=> action((T)o,i)));
         }
         public void RegisterPostHandler<T, U>(Func<T, IPacketInfo, U> action) where U : ISerializable<U>
         {
-            PostHandlers.Add(typeof(T), action);
+            PostHandlers.Add(typeof(T),new Func<object,IPacketInfo,object>((o,i)=>action((T)o,i)));
         }
-
+        public void RegisterGetHandler<T>(Action<T> action)
+        {
+            GetHandlers.Add(typeof(T), new Action<object, IPacketInfo>((o, i) => action((T)o)));
+        }
+        public void RegisterPostHandler<T, U>(Func<T, U> action) where U : ISerializable<U>
+        {
+            PostHandlers.Add(typeof(T), new Func<object, IPacketInfo, object>((o, i) => action((T)o)));
+        }
         private void RequestAppear(object? sender, IPacket e)
         {
             RequestsQueue.Add(e);
@@ -124,11 +123,11 @@ namespace CSDTP.Requests
             {
                 var request = (IRequestContainer)packet.DataObj;
 
-                if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue(request.DataType, out object handlerFunc))
-                    HandlePostRequest(packet, request, handlerFunc);
+                if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue(request.DataType, out var postHandler))
+                    HandlePostRequest(packet, request, postHandler);
 
-                else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out handlerFunc))
-                    HandleGetRequest(packet, request, handlerFunc);
+                else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out var getHandler))
+                    HandleGetRequest(packet, request, getHandler);
             }
             catch (Exception e)
             {
@@ -136,9 +135,9 @@ namespace CSDTP.Requests
             }
 
         }
-        private void HandlePostRequest(IPacket packet, IRequestContainer request, object handler)
+        private void HandlePostRequest(IPacket packet, IRequestContainer request, Func<object,IPacketInfo,object> handler)
         {
-            var responseObj = InvokeMethod(request,packet,handler);
+            var responseObj = handler(request.DataObj, packet);
             if (responseObj == null)
                 return;
 
@@ -148,20 +147,11 @@ namespace CSDTP.Requests
             var response = (IRequestContainer)Activator.CreateInstance(responseType, responseObj, request.Id, RequestType.Response);
             Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort));
         }
-        private void HandleGetRequest(IPacket packet, IRequestContainer request,object handler)
+        private void HandleGetRequest(IPacket packet, IRequestContainer request,Action<object,IPacketInfo> handler)
         {
-            InvokeMethod(request, packet, handler);
+            handler(request.DataObj, packet);
         }
 
-        private object? InvokeMethod(IRequestContainer request, IPacketInfo packetInfo, object handler)
-        {
-            var method = ((Delegate)handler).Method;
-            if (method.GetParameters().Length == 1)
-                return method.Invoke(handler, new object[] { request.DataObj });
-            else
-                return method.Invoke(handler, new object[] { request.DataObj,packetInfo });
-
-        }
 
         private void Reply(IRequestContainer data, IPEndPoint destination)
         {
