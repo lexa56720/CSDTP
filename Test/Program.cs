@@ -82,10 +82,14 @@ namespace Test
             var port = PortUtils.GetFreePort();
 
             using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter);
-            using var responder = new Responder(TimeSpan.FromSeconds(-10), port, crypter);
+            requester.SetPacketType(typeof(ShitPacket<>));
+
+
+            using var responder = new Responder(TimeSpan.FromSeconds(10), port, crypter);
+            responder.SetPacketType(typeof(ShitPacket<>));
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
-            // requester.SetPacketType(typeof(ShitPacket<>));
+         
 
             int count = 0;
             int globalCount = 1;
@@ -93,19 +97,19 @@ namespace Test
 
             while (globalCount < 100)
             {
-               // if (requester.Requests.Count < 50)
-                    requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e => Interlocked.Increment(ref count));
+                // if (requester.Requests.Count < 50)
+               // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
 
-               // var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(20)).ContinueWith(e => Interlocked.Increment(ref count));
+                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(20)).ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
-                if (stopwatch.ElapsedMilliseconds > 1000 )
+                if (stopwatch.ElapsedMilliseconds > globalCount*1000)
                 {
                     Console.Clear();
-                    Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds);
-                    count =0;
-                    stopwatch.Restart();
+                    Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds +" " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
+                    //count =0;
+                   // stopwatch.Restart();
                     globalCount++;
                 }
 
@@ -115,7 +119,7 @@ namespace Test
         static int counter = 0;
         static Message Modify(Message msg, IPacketInfo info)
         {
-            return new Message(msg.Text + " " + counter++);
+            return new Message(msg.Text + " " + Interlocked.Increment(ref counter));
         }
         static void ModifyGet(Message msg, IPacketInfo info)
         {

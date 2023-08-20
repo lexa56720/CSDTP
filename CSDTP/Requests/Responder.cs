@@ -6,6 +6,7 @@ using CSDTP.Requests.RequestHeaders;
 using CSDTP.Utils;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
@@ -25,9 +26,8 @@ namespace CSDTP.Requests
         public int ListenPort => Receiver.Port;
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
-        private Dictionary<Type, Action<object, IPacketInfo>> GetHandlers { get; set; } = new Dictionary<Type, Action<object, IPacketInfo>>();
-        private Dictionary<Type, Func<object, IPacketInfo, object>> PostHandlers { get; set; } = new Dictionary<Type, Func<object, IPacketInfo, object>>();
-
+        private Dictionary<Type, Action<object, IPacketInfo>> GetHandlers = new Dictionary<Type, Action<object, IPacketInfo>>();
+        private Dictionary<Type, Func<object, IPacketInfo, object>> PostHandlers = new Dictionary<Type, Func<object, IPacketInfo, object>>();
 
         private CompiledActivator Activator = new CompiledActivator();
 
@@ -36,7 +36,9 @@ namespace CSDTP.Requests
         private IReceiver Receiver { get; set; }
 
 
-        private MethodInfo SendMethod = typeof(ISender).GetMethods().First(m => m.Name == nameof(ISender.Send));
+        private Type? PacketType = null;
+        private CompiledMethod SendMethod { get; set; }
+        private CompiledMethod SendCustomPacketMethod { get; set; }
 
         public Responder(TimeSpan sendersTimeout, int port, bool isTcp = false)
         {
@@ -45,6 +47,7 @@ namespace CSDTP.Requests
             Receiver = new Receiver(port < 0 ? 0 : port, isTcp);
             Receiver.DataAppear += RequestAppear;
             IsTcp = isTcp;
+            SetupSendMethod();
         }
         public Responder(TimeSpan sendersTimeout, int port, IEncryptProvider encryptProvider, bool isTcp = false)
         {
@@ -58,6 +61,7 @@ namespace CSDTP.Requests
             Receiver.DataAppear += RequestAppear;
 
             IsTcp = isTcp;
+            SetupSendMethod();
         }
         public Responder(TimeSpan sendersTimeout, int port, IEncryptProvider encrypterProvider, IEncryptProvider decryptProvider, bool isTcp = false)
         {
@@ -71,8 +75,8 @@ namespace CSDTP.Requests
             Receiver.DataAppear += RequestAppear;
 
             IsTcp = isTcp;
+            SetupSendMethod();
         }
-
         public void Dispose()
         {
             Senders.Stop();
@@ -81,6 +85,30 @@ namespace CSDTP.Requests
 
             Receiver.DataAppear -= RequestAppear;
             Receiver.Dispose();
+        }
+
+        private void SetupSendMethod()
+        {
+            SendMethod = new CompiledMethod(typeof(ISender).GetMethods().First(m => m.GetGenericArguments().Length == 1 && m.Name == nameof(ISender.Send)));
+            SendCustomPacketMethod = new CompiledMethod(typeof(ISender).GetMethods().First(m => m.GetGenericArguments().Length == 2 && m.Name == nameof(ISender.Send)));
+        }
+
+        public bool SetPacketType(Type type)
+        {
+            if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0))
+                return false;
+
+            var temp = type;
+            while (temp.BaseType != null)
+            {
+                if (temp.BaseType.GUID == typeof(Packet<>).GUID)
+                {
+                    PacketType = type;
+                    return true;
+                }
+                temp = temp.BaseType;
+            }
+            return false;
         }
 
         public void Start()
@@ -120,7 +148,6 @@ namespace CSDTP.Requests
             PostHandlers.Add(typeof(T), new Func<object, IPacketInfo, object>((o, i) => action((T)o)));
         }
 
-
         private void RequestAppear(object? sender, IPacket e)
         {
             RequestsQueue.Add(e);
@@ -147,6 +174,7 @@ namespace CSDTP.Requests
         {
             handler(request.DataObj, packet);
         }
+
         private void HandlePostRequest(IPacket packet, IRequestContainer request, Func<object, IPacketInfo, object> handler)
         {
             var responseObj = handler(request.DataObj, packet);
@@ -177,7 +205,14 @@ namespace CSDTP.Requests
                 sender = GetNewSender(destination);
                 Senders.Add(sender);
             }
-            SendMethod.MakeGenericMethod(data.GetType()).Invoke(sender, new object[] { data });
+            SendMethod.Invoke(sender, data.GetType(), data);
+        }
+
+        private async Task<bool> Send(ISender sender, IRequestContainer data)
+        {
+            if (PacketType != null)
+                return await (Task<bool>)SendCustomPacketMethod.Invoke(sender,new Type[] { data.GetType(), PacketType.MakeGenericType(data.GetType()) }, data);
+            return await (Task<bool>)SendMethod.Invoke(sender, data.GetType(), data);
         }
 
         private ISender GetNewSender(IPEndPoint destination)
