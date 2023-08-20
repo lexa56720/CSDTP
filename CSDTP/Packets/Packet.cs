@@ -60,8 +60,7 @@ namespace CSDTP.Packets
         private void SerializePacketHeaders(BinaryWriter writer)
         {
             var typeBytes = Compressor.Compress(TypeOfPacket.AssemblyQualifiedName);
-            writer.Write(typeBytes.Length);
-            writer.Write(typeBytes);
+            writer.WriteBytes(typeBytes);
 
             SerializeCustomData(writer);
             writer.Write(ReplyPort);

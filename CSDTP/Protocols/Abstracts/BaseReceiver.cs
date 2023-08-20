@@ -82,11 +82,9 @@ namespace CSDTP.Protocols.Abstracts
             {
                 using var reader = new BinaryReader(new MemoryStream(bytes));
 
-                var lenght= reader.ReadInt32();
-                var typeBytes=reader.ReadBytes(lenght);
-                var t = Type.GetType(Compressor.Decompress(typeBytes));
+                var type = Type.GetType(Compressor.Decompress(reader.ReadByteArray()));
 
-                var packet = (IPacket)Activator.CreateInstance(t);
+                var packet = (IPacket)Activator.CreateInstance(type);
 
                 if (DecryptProvider != null)
                     packet.Deserialize(reader, DecryptProvider);
