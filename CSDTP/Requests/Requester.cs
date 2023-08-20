@@ -33,7 +33,7 @@ namespace CSDTP.Requests
 
         private MethodInfo SendCustomPacket;
 
-        private ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>>();
+        public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>>();
 
         public Requester(IPEndPoint destination, int replyPort, bool isTcp = false)
         {
@@ -122,23 +122,35 @@ namespace CSDTP.Requests
             return false;
         }
 
-        public async Task<T> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
+        public async Task<T?> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
         {
             var container = new RequestContainer<U>(data, RequestType.Post);
             await Send(container);
 
             return await GetResponse<T, U>(container, timeout);
         }
-        private async Task<T> GetResponse<T, U>(RequestContainer<U> container, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
+        private async Task<T?> GetResponse<T, U>(RequestContainer<U> container, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
         {
             var resultSource = new TaskCompletionSource<IPacket>();
 
             if (Sender.IsAvailable && Requests.TryAdd(container.Id, resultSource))
             {
                 var response = resultSource.Task;
-                await response.WaitAsync(timeout);
 
-                Requests.TryRemove(new KeyValuePair<Guid, TaskCompletionSource<IPacket>>(container.Id, resultSource));
+
+                try
+                {
+                    await response.WaitAsync(timeout);
+                }
+                catch(TimeoutException ex)
+                {
+                    return default;
+                }
+                finally
+                {
+                    Requests.TryRemove(new KeyValuePair<Guid, TaskCompletionSource<IPacket>>(container.Id, resultSource));
+                }
+
                 if (response.IsCompletedSuccessfully)
                     return ((Packet<RequestContainer<T>>)response.Result).Data.Data;
             }

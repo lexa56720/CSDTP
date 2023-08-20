@@ -48,12 +48,16 @@ namespace CSDTP.Protocols.Udp
             Dispose();
         }
 
+
         protected override async Task<bool> SendBytes(byte[] bytes)
         {
+   
+         
             if (!IsAvailable)
                 return false;
-            ;
+
             var sended = await Client.SendAsync(bytes, bytes.Length);
+
             return sended == bytes.Length;
         }
     }

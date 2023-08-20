@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -10,7 +11,7 @@ namespace CSDTP.Utils
 {
     internal class CompiledActivator
     {
-        private Dictionary<Type, Func<object>> Activators = new Dictionary<Type, Func<object>>();
+        private ConcurrentDictionary<Type, Func<object>> Activators = new ConcurrentDictionary<Type, Func<object>>();
         private Func<object> CreateCtor(Type type)
         {
             ConstructorInfo ctor = type.GetConstructors().First(c => c.GetParameters().Length == 0);
@@ -24,7 +25,7 @@ namespace CSDTP.Utils
             if (!Activators.TryGetValue(type, out var activator))
             {
                 activator = CreateCtor(type);
-                Activators.Add(type, activator);
+                Activators.TryAdd(type, activator);
             }
             return activator;
         }

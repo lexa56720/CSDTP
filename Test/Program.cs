@@ -5,13 +5,14 @@ using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Requests;
+using CSDTP.Utils;
 using System.Diagnostics;
 using System.Net;
 using System.Reflection.PortableExecutable;
 
 namespace Test
 {
-    public class ShitPacket<T>:Packet<T> where T: ISerializable<T>
+    public class ShitPacket<T> : Packet<T> where T : ISerializable<T>
     {
         public ShitPacket()
         {
@@ -30,7 +31,7 @@ namespace Test
 
         protected override void SerializeCustomData(BinaryWriter writer)
         {
-            writer.Write(Shit);  
+            writer.Write(Shit);
         }
     }
     internal class Program
@@ -40,7 +41,7 @@ namespace Test
             //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
 
 
-           // await TestGet();
+            // await TestGet();
             await TestPost();
             Console.ReadLine();
 
@@ -75,13 +76,16 @@ namespace Test
         public static async Task TestPost()
         {
             //using var crypter = new RsaEncrypter();
-            using var crypter =new SimpleEncryptProvider(  new AesEncrypter());
+            using var crypter = new SimpleEncryptProvider(new AesEncrypter());
 
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666),crypter);
-            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666, crypter);
+
+            var port = PortUtils.GetFreePort();
+
+            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter);
+            using var responder = new Responder(TimeSpan.FromSeconds(-10), port, crypter);
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
-           // requester.SetPacketType(typeof(ShitPacket<>));
+            // requester.SetPacketType(typeof(ShitPacket<>));
 
             int count = 0;
             int globalCount = 1;
@@ -89,14 +93,19 @@ namespace Test
 
             while (globalCount < 100)
             {
-                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !" + count++), TimeSpan.FromSeconds(20));
+               // if (requester.Requests.Count < 50)
+                    requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e => Interlocked.Increment(ref count));
+
+
+               // var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(20)).ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
-                if (stopwatch.ElapsedMilliseconds > 1000*globalCount)
+                if (stopwatch.ElapsedMilliseconds > 1000 )
                 {
                     Console.Clear();
                     Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds);
-                  
+                    count =0;
+                    stopwatch.Restart();
                     globalCount++;
                 }
 
@@ -104,7 +113,7 @@ namespace Test
         }
 
         static int counter = 0;
-        static Message Modify(Message msg,IPacketInfo info)
+        static Message Modify(Message msg, IPacketInfo info)
         {
             return new Message(msg.Text + " " + counter++);
         }

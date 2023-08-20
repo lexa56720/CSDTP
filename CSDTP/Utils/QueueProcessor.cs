@@ -55,7 +55,7 @@ namespace CSDTP.Utils
                 {
                     count = Queue.Count;
 
-                    if (count > SequentialLimit)
+                    if (count >= SequentialLimit)
                         ProcessParallel(count);
 
                     else if (count < SequentialLimit && count > 0)

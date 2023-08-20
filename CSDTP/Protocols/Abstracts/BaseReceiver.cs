@@ -30,21 +30,21 @@ namespace CSDTP.Protocols.Abstracts
         public BaseReceiver(int port)
         {
             Port = port;
-            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
+            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 10, TimeSpan.FromMilliseconds(20));
         }
         public BaseReceiver(int port, IEncryptProvider decryptProvider)
         {
             Port = port;
-            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
+            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 10, TimeSpan.FromMilliseconds(20));
             DecryptProvider = decryptProvider;
         }
         public BaseReceiver()
         {
-            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
+            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 10, TimeSpan.FromMilliseconds(20));
         }
         public BaseReceiver(IEncryptProvider decrypter)
         {
-            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 100, TimeSpan.FromMilliseconds(20));
+            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 10, TimeSpan.FromMilliseconds(20));
             DecryptProvider = decrypter;
         }
 
