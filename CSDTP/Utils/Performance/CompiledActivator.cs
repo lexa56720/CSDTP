@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Utils
+namespace CSDTP.Utils.Performance
 {
     internal class CompiledActivator
     {

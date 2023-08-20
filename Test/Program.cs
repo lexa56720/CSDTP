@@ -95,16 +95,16 @@ namespace Test
             int globalCount = 1;
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            while (globalCount < 100)
+            while (globalCount < 10000)
             {
                 // if (requester.Requests.Count < 50)
                // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
 
-                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(20)).ContinueWith(e => Interlocked.Increment(ref count));
+                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5)).ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
-                if (stopwatch.ElapsedMilliseconds > globalCount*1000)
+                //if (stopwatch.ElapsedMilliseconds > globalCount*1000)
                 {
                     Console.Clear();
                     Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds +" " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);

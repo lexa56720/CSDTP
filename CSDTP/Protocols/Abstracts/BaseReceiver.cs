@@ -1,6 +1,8 @@
 ﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Utils;
+using CSDTP.Utils.Collections;
+using CSDTP.Utils.Performance;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -80,8 +82,10 @@ namespace CSDTP.Protocols.Abstracts
             {
                 using var reader = new BinaryReader(new MemoryStream(bytes));
 
-                var s = reader.ReadString();
-                var t = Type.GetType(s);
+                var lenght= reader.ReadInt32();
+                var typeBytes=reader.ReadBytes(lenght);
+                var t = Type.GetType(Compressor.Decompress(typeBytes));
+
                 var packet = (IPacket)Activator.CreateInstance(t);
 
                 if (DecryptProvider != null)

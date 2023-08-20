@@ -3,7 +3,7 @@ using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
-using CSDTP.Utils;
+using CSDTP.Utils.Performance;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

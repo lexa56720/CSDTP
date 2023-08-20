@@ -1,6 +1,8 @@
 ﻿using CSDTP.Cryptography.Algorithms;
 using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
+using CSDTP.Utils;
+using CSDTP.Utils.Performance;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -55,17 +57,18 @@ namespace CSDTP.Packets
             if (IsHasData)
                 Data.Serialize(writer);
         }
-
         private void SerializePacketHeaders(BinaryWriter writer)
         {
-            writer.Write(TypeOfPacket.AssemblyQualifiedName);
+            var typeBytes = Compressor.Compress(TypeOfPacket.AssemblyQualifiedName);
+            writer.Write(typeBytes.Length);
+            writer.Write(typeBytes);
+
             SerializeCustomData(writer);
             writer.Write(ReplyPort);
             writer.Write(SendTime.ToBinary());
 
             writer.Write(IsHasData);
         }
-
         protected virtual void SerializeCustomData(BinaryWriter writer)
         {
 
@@ -82,19 +85,8 @@ namespace CSDTP.Packets
                 writer.Write(crypter.Crypt(ms.ToArray()));
             }
         }
-        private void DeserializePacketHeaders(BinaryReader reader)
-        {
-            DeserializeCustomData(reader);
-            ReplyPort = reader.ReadInt32();
-            SendTime = DateTime.FromBinary(reader.ReadInt64());
-            CryptMethod = (CryptMethod)reader.ReadByte();
-            IsHasData = reader.ReadBoolean();
-        }
 
-        protected virtual void DeserializeCustomData(BinaryReader reader)
-        {
 
-        }
         public IPacket Deserialize(BinaryReader reader, IEncryptProvider encryptProvider)
         {
             DeserializePacketHeaders(reader);
@@ -107,7 +99,6 @@ namespace CSDTP.Packets
 
             return this;
         }
-
         public IPacket Deserialize(BinaryReader reader)
         {
             DeserializePacketHeaders(reader);
@@ -115,6 +106,18 @@ namespace CSDTP.Packets
             Data = T.Deserialize(reader);
 
             return this;
+        }
+        private void DeserializePacketHeaders(BinaryReader reader)
+        {
+            DeserializeCustomData(reader);
+            ReplyPort = reader.ReadInt32();
+            SendTime = DateTime.FromBinary(reader.ReadInt64());
+            CryptMethod = (CryptMethod)reader.ReadByte();
+            IsHasData = reader.ReadBoolean();
+        }
+        protected virtual void DeserializeCustomData(BinaryReader reader)
+        {
+
         }
         private T DecryptData<T>(BinaryReader reader, IEncryptProvider encryptProvider) where T : ISerializable<T>
         {
@@ -132,5 +135,6 @@ namespace CSDTP.Packets
             using var br = new BinaryReader(decryptedMS);
             return T.Deserialize(br);
         }
+
     }
 }

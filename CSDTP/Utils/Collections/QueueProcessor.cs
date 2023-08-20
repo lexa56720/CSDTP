@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Utils
+namespace CSDTP.Utils.Collections
 {
     internal class QueueProcessor<T>
     {

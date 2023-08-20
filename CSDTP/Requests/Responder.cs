@@ -3,7 +3,8 @@ using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
-using CSDTP.Utils;
+using CSDTP.Utils.Collections;
+using CSDTP.Utils.Performance;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -205,7 +206,7 @@ namespace CSDTP.Requests
                 sender = GetNewSender(destination);
                 Senders.Add(sender);
             }
-            SendMethod.Invoke(sender, data.GetType(), data);
+            Send(sender, data);
         }
 
         private async Task<bool> Send(ISender sender, IRequestContainer data)

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Utils
+namespace CSDTP.Utils.Collections
 {
     internal class LifeTimeController<T> where T : IDisposable
     {
@@ -54,7 +54,7 @@ namespace CSDTP.Utils
 
         public void Add(T obj)
         {
-            Objects.Add(new KeyValuePair<T, DateTime>(obj, DateTime.Now.Add(LifeTime)));
+            Objects.Add(new KeyValuePair<T, DateTime>(obj, DateTime.UtcNow.Add(LifeTime)));
         }
         public T? Get(Predicate<T> predicate)
         {
@@ -64,11 +64,11 @@ namespace CSDTP.Utils
                 {
                     if (predicate(Objects[i].Key))
                     {
-                        Objects[i].Value.Add(LifeTime);
+                        Objects[i] =new KeyValuePair<T, DateTime>(Objects[i].Key, DateTime.UtcNow.Add(LifeTime));
                         return Objects[i].Key;
                     }
                 }
-                return default(T);
+                return default;
             }
         }
         public void Check()
@@ -77,7 +77,7 @@ namespace CSDTP.Utils
             {
                 while (IsRunning)
                 {
-                    var nowTime = DateTime.Now;
+                    var nowTime = DateTime.UtcNow;
                     var newObjects = new List<KeyValuePair<T, DateTime>>();
                     lock (locker)
                     {

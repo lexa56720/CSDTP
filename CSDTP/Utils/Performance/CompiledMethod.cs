@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Utils
+namespace CSDTP.Utils.Performance
 {
     internal class CompiledMethod
     {
@@ -90,12 +90,12 @@ namespace CSDTP.Utils
         {
             public bool Equals(Type[]? x, Type[]? y)
             {
-                if(x==null || y==null)
+                if (x == null || y == null)
                     return false;
 
                 if (x.Length != y.Length)
                     return false;
-     
+
                 for (int i = 0; i < x.Length; i++)
                     if (x[i] != y[i])
                         return false;
