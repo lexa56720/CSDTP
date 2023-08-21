@@ -64,8 +64,8 @@ namespace CSDTP.Protocols.Udp
                         var data = await Listener.ReceiveAsync(token);
 
                         token.ThrowIfCancellationRequested();
-
-                        ReceiverQueue.Add(new Tuple<byte[], IPAddress>( data.Buffer, data.RemoteEndPoint.Address));
+                        if (IsAllowed(data.RemoteEndPoint))
+                            ReceiverQueue.Add(new Tuple<byte[], IPAddress>(data.Buffer, data.RemoteEndPoint.Address));
                     }
                     catch (OperationCanceledException e)
                     {

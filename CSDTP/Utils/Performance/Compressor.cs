@@ -11,7 +11,7 @@ namespace CSDTP.Utils.Performance
     internal static class Compressor
     {
         private static ConcurrentDictionary<string, byte[]> StringBytes = new ConcurrentDictionary<string, byte[]>();
-        private static ConcurrentDictionary<byte[], string> BytesString = new ConcurrentDictionary<byte[], string>(new ArrayEqualityComparer());
+        private static ConcurrentDictionary<byte[], string> BytesString = new ConcurrentDictionary<byte[], string>(new BytesEqualityComparer());
 
         public static byte[] Compress(string str)
         {
@@ -47,25 +47,15 @@ namespace CSDTP.Utils.Performance
             return result;
         }
 
-
-        private class ArrayEqualityComparer : IEqualityComparer<byte[]>
+        public static void Clear()
         {
-            public bool Equals(byte[]? x, byte[]? y)
-            {
-                if (x == null || y == null)
-                    return false;
+            StringBytes.Clear();
+            BytesString.Clear();
+        }
 
-                if (x.Length != y.Length)
-                    return false;
-
-                for (int i = 0; i < x.Length; i++)
-                    if (x[i] != y[i])
-                        return false;
-
-                return true;
-            }
-
-            public int GetHashCode(byte[] obj)
+        private class BytesEqualityComparer : ArrayEqualityComparer<byte>
+        {
+            public override int GetHashCode(byte[] obj)
             {
                 int result = 17;
                 for (int i = 0; i < obj.Length; i++)

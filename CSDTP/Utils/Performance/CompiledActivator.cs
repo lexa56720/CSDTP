@@ -20,6 +20,12 @@ namespace CSDTP.Utils.Performance
             return (Func<object>)lambda.Compile();
         }
 
+        public void Clear()
+        {
+            Activators.Clear();
+        }
+
+
         private Func<object> GetActivator(Type type)
         {
             if (!Activators.TryGetValue(type, out var activator))

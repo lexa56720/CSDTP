@@ -12,13 +12,19 @@ namespace CSDTP.Utils.Performance
 {
     internal class CompiledMethod
     {
-        private ConcurrentDictionary<Type[], Func<object[], object>> Methods = new ConcurrentDictionary<Type[], Func<object[], object>>(new ArrayEqualityComparer());
+        private ConcurrentDictionary<Type[], Func<object[], object>> Methods = new (new TypesEqualityComparer());
 
         private MethodInfo Method;
         public CompiledMethod(MethodInfo method)
         {
             Method = method;
         }
+
+        public void Clear()
+        {
+            Methods.Clear();
+        }
+
         public object Invoke(object obj, Type genericType, params object[] args)
         {
             var type = new Type[] { genericType };
@@ -85,25 +91,9 @@ namespace CSDTP.Utils.Performance
             return lambdaExpression.Compile();
         }
 
-
-        private class ArrayEqualityComparer : IEqualityComparer<Type[]>
+        private class TypesEqualityComparer : ArrayEqualityComparer<Type>
         {
-            public bool Equals(Type[]? x, Type[]? y)
-            {
-                if (x == null || y == null)
-                    return false;
-
-                if (x.Length != y.Length)
-                    return false;
-
-                for (int i = 0; i < x.Length; i++)
-                    if (x[i] != y[i])
-                        return false;
-
-                return true;
-            }
-
-            public int GetHashCode(Type[] obj)
+            public override int GetHashCode(Type[] obj)
             {
                 int result = 17;
                 for (int i = 0; i < obj.Length; i++)

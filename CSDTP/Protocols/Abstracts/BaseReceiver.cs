@@ -1,4 +1,5 @@
 ﻿using CSDTP.Cryptography.Providers;
+using CSDTP.DosProtect;
 using CSDTP.Packets;
 using CSDTP.Utils;
 using CSDTP.Utils.Collections;
@@ -29,6 +30,7 @@ namespace CSDTP.Protocols.Abstracts
 
         public event EventHandler<IPacket>? DataAppear;
 
+        protected internal static ITrafficLimiter? TrafficLimiter { get; set; }
         public BaseReceiver(int port)
         {
             Port = port;
@@ -100,6 +102,10 @@ namespace CSDTP.Protocols.Abstracts
                 throw new Exception("PACKET DESERIALIZATION ERROR", ex);
             }
 
+        }
+        protected bool IsAllowed(IPEndPoint ip)
+        {
+            return (TrafficLimiter == null) || (TrafficLimiter != null && TrafficLimiter.IsAllowed(ip.Address)) ;
         }
 
         private void HandleData(Tuple<byte[], IPAddress> packetInfo)
