@@ -58,7 +58,7 @@ namespace CSDTP.Requests
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
 
 
-            Receiver = new Receiver(port < 0 ? 0 : port, encryptProvider, isTcp);
+            Receiver = new Receiver(port < 0 ? 0 : port, isTcp);
             Receiver.DataAppear += RequestAppear;
 
             IsTcp = isTcp;
@@ -78,6 +78,7 @@ namespace CSDTP.Requests
             IsTcp = isTcp;
             SetupSendMethod();
         }
+        
         public void Dispose()
         {
             Senders.Stop();

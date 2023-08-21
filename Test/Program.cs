@@ -81,11 +81,11 @@ namespace Test
 
             var port = PortUtils.GetFreePort();
 
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter);
+            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter,crypter);
             requester.SetPacketType(typeof(ShitPacket<>));
 
 
-            using var responder = new Responder(TimeSpan.FromSeconds(10), port, crypter);
+            using var responder = new Responder(TimeSpan.FromSeconds(10), port, crypter, crypter);
             responder.SetPacketType(typeof(ShitPacket<>));
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
