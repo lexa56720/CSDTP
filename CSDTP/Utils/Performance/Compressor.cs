@@ -17,7 +17,7 @@ namespace CSDTP.Utils.Performance
         {
             if (!StringBytes.TryGetValue(str, out var result))
             {
-                var bytes = Encoding.ASCII.GetBytes(str);
+                var bytes = Encoding.UTF8.GetBytes(str);
                 using var output = new MemoryStream();
                 using var dstream = new DeflateStream(output, CompressionLevel.Fastest);
 
@@ -39,7 +39,7 @@ namespace CSDTP.Utils.Performance
                 using var output = new MemoryStream();
                 using var dstream = new DeflateStream(input, CompressionMode.Decompress);
                 dstream.CopyTo(output);
-                result = Encoding.ASCII.GetString(output.ToArray());
+                result = Encoding.UTF8.GetString(output.ToArray());
 
                 BytesString.TryAdd(bytes,result);
                 StringBytes.TryAdd(result,bytes);
