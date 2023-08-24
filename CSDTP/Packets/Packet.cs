@@ -122,7 +122,7 @@ namespace CSDTP.Packets
         }
         private T DecryptData<T>(BinaryReader reader, IEncryptProvider encryptProvider) where T : ISerializable<T>
         {
-            var crypter = encryptProvider.GetEncrypter(this);
+            var crypter = encryptProvider.GetDecrypter(this);
             ArgumentNullException.ThrowIfNull(crypter);
 
             var ms = (MemoryStream)reader.BaseStream;

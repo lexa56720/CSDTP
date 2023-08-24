@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -24,6 +25,7 @@ namespace CSDTP.Protocols.Abstracts
 
         private CompiledActivator Activator=new CompiledActivator();
 
+        private GlobalByteDictionary<Type> PacketType = new GlobalByteDictionary<Type>();
         public IEncryptProvider? DecryptProvider { get; set; }
 
         public virtual int Port { get; }
@@ -84,7 +86,7 @@ namespace CSDTP.Protocols.Abstracts
             {
                 using var reader = new BinaryReader(new MemoryStream(bytes));
 
-                var type = Type.GetType(Compressor.Decompress(reader.ReadByteArray()));
+                var type = PacketType.Get(reader.ReadByteArray(), b=> Type.GetType(Compressor.Decompress(b)));
 
                 var packet = (IPacket)Activator.CreateInstance(type);
 

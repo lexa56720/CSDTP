@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Requests.RequestHeaders
 {
-    enum RequestType
+    public enum RequestType
     {
         Post,
         Get,
         Response,
     }
-    internal interface IRequestContainer
+    public interface IRequestContainer
     {
         public Guid Id { get; set; }
 
