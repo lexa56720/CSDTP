@@ -78,7 +78,19 @@ namespace CSDTP.Protocols
             where T : ISerializable<T>
             where U : Packet<T>, new()
         {
-            return ((ISender)SenderSocket).Send<T, U>(data);
+            return SenderSocket.Send<T, U>(data);
+        }
+
+        public Task<bool> Send<T>(T data, object info) where T : ISerializable<T>
+        {
+            return SenderSocket.Send(data, info);
+        }
+
+        public Task<bool> Send<T, U>(T data, object info)
+            where T : ISerializable<T>
+            where U : Packet<T>, new()
+        {
+            return SenderSocket.Send<T, U>(data, info);
         }
     }
 }

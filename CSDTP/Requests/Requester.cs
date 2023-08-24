@@ -48,7 +48,7 @@ namespace CSDTP.Requests
         public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encryptProvider, bool isTcp = false)
         {
             EncryptProvider = encryptProvider;
-           
+
 
             Receiver = new Receiver(ReplyPort, isTcp);
             Receiver.DataAppear += ResponseAppear;
@@ -110,17 +110,18 @@ namespace CSDTP.Requests
 
         private void SetupMethods()
         {
-            SendCustomPacket = new CompiledMethod(Sender.GetType().GetMethods().First(m => m.Name == nameof(ISender.Send) && m.GetGenericArguments().Length == 2));
+            SendCustomPacket = new CompiledMethod(Sender.GetType().GetMethods()
+                .First(m => m.Name == nameof(ISender.Send) && m.GetGenericArguments().Length == 2 && m.GetParameters().Length == 1));
         }
 
         public bool SetPacketType(Type type)
-        {        
-            if(!type.GetConstructors().Any(c=>c.GetParameters().Length==0))
+        {
+            if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0))
                 return false;
 
             var temp = type;
-            while (temp.BaseType!=null)
-            {         
+            while (temp.BaseType != null)
+            {
                 if (temp.BaseType.GUID == typeof(Packet<>).GUID)
                 {
                     PacketType = type;
@@ -151,7 +152,7 @@ namespace CSDTP.Requests
                 {
                     await response.WaitAsync(timeout);
                 }
-                catch(TimeoutException ex)
+                catch (TimeoutException ex)
                 {
                     return default;
                 }
@@ -185,7 +186,7 @@ namespace CSDTP.Requests
         private async Task<bool> Send<U>(RequestContainer<U> container) where U : ISerializable<U>
         {
             if (PacketType != null)
-                return await (Task<bool>)SendCustomPacket.Invoke(Sender,new Type[] { typeof(RequestContainer<U>), PacketType.MakeGenericType(typeof(RequestContainer<U>)) }, container);
+                return await (Task<bool>)SendCustomPacket.Invoke(Sender, new Type[] { typeof(RequestContainer<U>), PacketType.MakeGenericType(typeof(RequestContainer<U>)) }, container);
             return await Sender.Send(container);
         }
     }

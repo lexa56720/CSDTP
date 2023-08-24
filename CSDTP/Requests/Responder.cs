@@ -78,7 +78,7 @@ namespace CSDTP.Requests
             IsTcp = isTcp;
             SetupSendMethod();
         }
-        
+
         public void Dispose()
         {
             Senders.Stop();
@@ -91,8 +91,11 @@ namespace CSDTP.Requests
 
         private void SetupSendMethod()
         {
-            SendMethod = new CompiledMethod(typeof(ISender).GetMethods().First(m => m.GetGenericArguments().Length == 1 && m.Name == nameof(ISender.Send)));
-            SendCustomPacketMethod = new CompiledMethod(typeof(ISender).GetMethods().First(m => m.GetGenericArguments().Length == 2 && m.Name == nameof(ISender.Send)));
+            SendMethod = new CompiledMethod(typeof(ISender).GetMethods().First(
+                m => m.GetGenericArguments().Length == 1 && m.Name == nameof(ISender.Send) && m.GetParameters().Length == 2));
+
+            SendCustomPacketMethod = new CompiledMethod(typeof(ISender).GetMethods().First(
+                m => m.GetGenericArguments().Length == 2 && m.Name == nameof(ISender.Send) && m.GetParameters().Length == 2));
         }
 
         public bool SetPacketType(Type type)
@@ -188,7 +191,7 @@ namespace CSDTP.Requests
 
             var response = GetResponse(responseType, responseObj, request.Id);
 
-            Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort));
+            Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort), packet);
         }
         private IRequestContainer GetResponse(Type responseType, object responseObject, Guid id)
         {
@@ -199,7 +202,7 @@ namespace CSDTP.Requests
             response.DataObj = responseObject;
             return response;
         }
-        private void Reply(IRequestContainer data, IPEndPoint destination)
+        private void Reply(IRequestContainer data, IPEndPoint destination, IPacket request)
         {
             var sender = Senders.Get(s => s.Destination.Equals(destination) && s.IsAvailable);
             if (sender == null)
@@ -207,14 +210,18 @@ namespace CSDTP.Requests
                 sender = GetNewSender(destination);
                 Senders.Add(sender);
             }
-            Send(sender, data);
+            Send(sender, data, request);
         }
 
-        private async Task<bool> Send(ISender sender, IRequestContainer data)
+        private async Task<bool> Send(ISender sender, IRequestContainer data, IPacket request)
         {
             if (PacketType != null)
-                return await (Task<bool>)SendCustomPacketMethod.Invoke(sender,new Type[] { data.GetType(), PacketType.MakeGenericType(data.GetType()) }, data);
-            return await (Task<bool>)SendMethod.Invoke(sender, data.GetType(), data);
+                return await (Task<bool>)SendCustomPacketMethod.Invoke(sender, new Type[]
+                {
+                    data.GetType(),
+                    PacketType.MakeGenericType(data.GetType())
+                }, data, request);
+            return await (Task<bool>)SendMethod.Invoke(sender, data.GetType(), data, request);
         }
 
         private ISender GetNewSender(IPEndPoint destination)

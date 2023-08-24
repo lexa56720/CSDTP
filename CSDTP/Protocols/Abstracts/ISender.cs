@@ -18,6 +18,13 @@ namespace CSDTP.Protocols.Abstracts
         public int ReplyPort { get; }
         public bool IsAvailable { get; }
         public void Close();
+
+
+        public Task<bool> Send<T>(T data, object info) where T : ISerializable<T>;
+
+        public Task<bool> Send<T, U>(T data, object info) where T : ISerializable<T> where U : Packet<T>, new();
+
+
         public Task<bool> Send<T>(T data) where T : ISerializable<T>;
 
         public Task<bool> Send<T,U>(T data) where T : ISerializable<T> where U: Packet<T>, new(); 
