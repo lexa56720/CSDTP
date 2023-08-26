@@ -28,7 +28,7 @@ namespace CSDTP.Requests
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
         private Dictionary<Type, Action<object, IPacketInfo>> GetHandlers = new Dictionary<Type, Action<object, IPacketInfo>>();
-        private Dictionary<Type, Func<object, IPacketInfo, object>> PostHandlers = new Dictionary<Type, Func<object, IPacketInfo, object>>();
+        private Dictionary<Type, Func<object, IPacketInfo, object?>> PostHandlers = new Dictionary<Type, Func<object, IPacketInfo, object>>();
 
         private CompiledActivator Activator = new CompiledActivator();
 
@@ -139,18 +139,18 @@ namespace CSDTP.Requests
         {
             GetHandlers.Add(typeof(T), new Action<object, IPacketInfo>((o, i) => action((T)o, i)));
         }
-        public void RegisterPostHandler<T, U>(Func<T, IPacketInfo, U> action) where U : ISerializable<U>
+        public void RegisterPostHandler<T, U>(Func<T, IPacketInfo, U?> action) where U : ISerializable<U>
         {
-            PostHandlers.Add(typeof(T), new Func<object, IPacketInfo, object>((o, i) => action((T)o, i)));
+            PostHandlers.Add(typeof(T), new Func<object, IPacketInfo, object?>((o, i) => action((T)o, i)));
         }
 
         public void RegisterGetHandler<T>(Action<T> action)
         {
             GetHandlers.Add(typeof(T), new Action<object, IPacketInfo>((o, i) => action((T)o)));
         }
-        public void RegisterPostHandler<T, U>(Func<T, U> action) where U : ISerializable<U>
+        public void RegisterPostHandler<T, U>(Func<T, U?> action) where U : ISerializable<U>
         {
-            PostHandlers.Add(typeof(T), new Func<object, IPacketInfo, object>((o, i) => action((T)o)));
+            PostHandlers.Add(typeof(T), new Func<object, IPacketInfo, object?>((o, i) => action((T)o)));
         }
 
         private void RequestAppear(object? sender, IPacket e)
@@ -183,8 +183,8 @@ namespace CSDTP.Requests
         private void HandlePostRequest(IPacket packet, IRequestContainer request, Func<object, IPacketInfo, object> handler)
         {
             var responseObj = handler(request.DataObj, packet);
-            if (responseObj == null)
-                return;
+
+            responseObj ??= new ResponseError();
 
             var genericType = responseObj.GetType();
             var responseType = typeof(RequestContainer<>).MakeGenericType(genericType);

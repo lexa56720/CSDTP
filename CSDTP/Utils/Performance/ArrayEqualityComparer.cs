@@ -18,7 +18,7 @@ namespace CSDTP.Utils.Performance
                 return false;
 
             for (int i = 0; i < x.Length; i++)
-                if (x[i].Equals(y[i]))
+                if (!x[i].Equals(y[i]))
                     return false;
 
             return true;

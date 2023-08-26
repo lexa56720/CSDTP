@@ -146,8 +146,6 @@ namespace CSDTP.Requests
             if (Sender.IsAvailable && Requests.TryAdd(container.Id, resultSource))
             {
                 var response = resultSource.Task;
-
-
                 try
                 {
                     await response.WaitAsync(timeout);
@@ -161,8 +159,10 @@ namespace CSDTP.Requests
                     Requests.TryRemove(new KeyValuePair<Guid, TaskCompletionSource<IPacket>>(container.Id, resultSource));
                 }
 
-                if (response.IsCompletedSuccessfully)
-                    return ((Packet<RequestContainer<T>>)response.Result).Data.Data;
+                var result = response.Result as Packet<RequestContainer<T>>;
+                if (response.IsCompletedSuccessfully && result!=null && result.Data!=null)
+                    return result.Data.Data;
+                return default;
             }
 
             throw new Exception("Request sending error");
