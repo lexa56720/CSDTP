@@ -30,6 +30,7 @@ namespace CSDTP.Cryptography.Algorithms
             }
         }
 
+        private bool isDisposed;
 
         public AesEncrypter()
         {
@@ -49,7 +50,9 @@ namespace CSDTP.Cryptography.Algorithms
         }
         public void Dispose()
         {
-            AES.Dispose();
+            if (!isDisposed)
+                AES.Dispose();
+            isDisposed = true;
         }
         public byte[] Crypt(byte[] data)
         {

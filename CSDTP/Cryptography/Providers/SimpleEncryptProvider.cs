@@ -16,10 +16,12 @@ namespace CSDTP.Cryptography.Providers
         }
 
         public IEncrypter Encrypter { get; }
-
+        private bool isDisposed;
         public void Dispose()
         {
-            Encrypter.Dispose();
+            if (!isDisposed)
+                Encrypter.Dispose();
+            isDisposed = true;
         }
 
         public void DisposeEncryptor(IEncrypter encryptor)

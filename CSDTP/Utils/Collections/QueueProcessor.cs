@@ -16,7 +16,7 @@ namespace CSDTP.Utils.Collections
 
         public bool IsRunning { get; private set; }
 
-        public QueueProcessor(Action<T> handleItem,int seqentialLimit, TimeSpan timeout)
+        public QueueProcessor(Action<T> handleItem, int seqentialLimit, TimeSpan timeout)
         {
             HandleItem = handleItem;
             SequentialLimit = seqentialLimit;
@@ -68,17 +68,23 @@ namespace CSDTP.Utils.Collections
         }
         private void ProcessSequentially(int count)
         {
-            for (int i = 0; i < count; i++)
-                if (Queue.TryDequeue(out var data))
-                    HandleItem(data);
+            Task.Run(() =>
+            {
+                for (int i = 0; i < count; i++)
+                    if (Queue.TryDequeue(out var data))
+                        HandleItem(data);
+            });
 
         }
         private void ProcessParallel(int count)
         {
-            Parallel.For(0, count, (i) =>
+            Task.Run(() =>
             {
-                if (Queue.TryDequeue(out var data))
-                    HandleItem(data);
+                Parallel.For(0, count, (i) =>
+                {
+                    if (Queue.TryDequeue(out var data))
+                        HandleItem(data);
+                });
             });
         }
 
