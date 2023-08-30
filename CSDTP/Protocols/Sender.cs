@@ -1,7 +1,9 @@
 ﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Protocols.Abstracts;
+using CSDTP.Protocols.Http;
 using CSDTP.Protocols.Udp;
+using Open.Nat;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,34 +29,65 @@ namespace CSDTP.Protocols
 
         private BaseSender SenderSocket;
 
-        public Sender(IPEndPoint destination, bool isTcp = false)
+        public Sender(IPEndPoint destination, Protocol protocol)
         {
-            if (isTcp)
-                throw new NotImplementedException();
-            else
-                SenderSocket = new UdpSender(destination);
+            switch (protocol)
+            {
+                case Protocol.Udp:
+                    SenderSocket = new UdpSender(destination); 
+                    break;
+                case Protocol.Tcp:
+                    throw new NotImplementedException("TCP NOT IMPLEMENTED");
+                    break;
+                case Protocol.Http:
+                    SenderSocket = new HttpSender(destination);
+                    break;
+            }
         }
-        public Sender(IPEndPoint destination, int replyPort, bool isTcp = false)
+        public Sender(IPEndPoint destination, int replyPort, Protocol protocol)
         {
-            if (isTcp)
-                throw new NotImplementedException();
-            else
-                SenderSocket = new UdpSender(destination, replyPort);
+            switch (protocol)
+            {
+                case Protocol.Udp:
+                    SenderSocket = new UdpSender(destination, replyPort);
+                    break;
+                case Protocol.Tcp:
+                    throw new NotImplementedException("TCP NOT IMPLEMENTED");
+                    break;
+                case Protocol.Http:
+                    SenderSocket = new HttpSender(destination, replyPort);
+                    break;
+            }
         }
-        public Sender(IPEndPoint destination, IEncryptProvider encryptProvider, bool isTcp = false)
+        public Sender(IPEndPoint destination, IEncryptProvider encryptProvider, Protocol protocol)
         {
-            if (isTcp)
-                throw new NotImplementedException();
-            else
-                SenderSocket = new UdpSender(destination, encryptProvider);
+            switch (protocol)
+            {
+                case Protocol.Udp:
+                    SenderSocket = new UdpSender(destination, encryptProvider); 
+                    break;
+                case Protocol.Tcp:
+                    throw new NotImplementedException("TCP NOT IMPLEMENTED");
+                    break;
+                case Protocol.Http:
+                    SenderSocket = new HttpSender(destination, encryptProvider);
+                    break;
+            }
         }
-        public Sender(IPEndPoint destination, IEncryptProvider encryptProvider, int replyPort, bool isTcp = false)
+        public Sender(IPEndPoint destination, IEncryptProvider encryptProvider, int replyPort, Protocol protocol)
         {
-
-            if (isTcp)
-                throw new NotImplementedException();
-            else
-                SenderSocket = new UdpSender(destination,encryptProvider, replyPort);
+            switch (protocol)
+            {
+                case Protocol.Udp:
+                    SenderSocket = new UdpSender(destination, encryptProvider, replyPort); 
+                    break;
+                case Protocol.Tcp:
+                    throw new NotImplementedException("TCP NOT IMPLEMENTED");
+                    break;
+                case Protocol.Http:
+                    SenderSocket = new HttpSender(destination, encryptProvider, replyPort);
+                    break;
+            }
         }
 
 
@@ -63,11 +96,6 @@ namespace CSDTP.Protocols
             SenderSocket.Dispose();
         }
 
-
-        public void Close()
-        {
-            SenderSocket.Close();
-        }
 
         public Task<bool> Send<T>(T data) where T : ISerializable<T>
         {

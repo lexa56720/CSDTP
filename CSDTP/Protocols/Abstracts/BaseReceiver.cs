@@ -33,6 +33,7 @@ namespace CSDTP.Protocols.Abstracts
         public event EventHandler<IPacket>? DataAppear;
 
         protected internal static ITrafficLimiter? TrafficLimiter { get; set; }
+
         public BaseReceiver(int port)
         {
             Port = port;
@@ -54,8 +55,8 @@ namespace CSDTP.Protocols.Abstracts
             DecryptProvider = decrypter;
         }
 
+
         public abstract void Dispose();
-        public abstract void Close();
 
         public virtual void Start()
         {

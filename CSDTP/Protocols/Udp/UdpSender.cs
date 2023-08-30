@@ -32,15 +32,10 @@ namespace CSDTP.Protocols.Udp
             IsAvailable = false;
         }
 
-        public override void Close()
-        {
-            Dispose();
-        }
-
 
         protected override async Task<bool> SendBytes(byte[] bytes)
         {
-            var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+            using var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
             client.Connect(Destination);
             if (!IsAvailable)
                 return false;

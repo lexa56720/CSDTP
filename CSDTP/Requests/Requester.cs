@@ -36,67 +36,67 @@ namespace CSDTP.Requests
 
         public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>>();
 
-        public Requester(IPEndPoint destination, int replyPort, bool isTcp = false)
+        public Requester(IPEndPoint destination, int replyPort, Protocol protocol=Protocol.Udp)
         {
-            Sender = new Sender(destination, replyPort, isTcp);
+            Sender = new Sender(destination, replyPort, protocol);
 
-            Receiver = new Receiver(ReplyPort, isTcp);
+            Receiver = new Receiver(ReplyPort, protocol);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
             SetupMethods();
         }
-        public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encryptProvider, bool isTcp = false)
+        public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encryptProvider, Protocol protocol = Protocol.Udp)
         {
             EncryptProvider = encryptProvider;
 
 
-            Receiver = new Receiver(ReplyPort, isTcp);
+            Receiver = new Receiver(ReplyPort, protocol);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
-            Sender = new Sender(destination, replyPort, isTcp);
+            Sender = new Sender(destination, replyPort, protocol);
             SetupMethods();
         }
-        public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encryptProvider, IEncryptProvider decrypter, bool isTcp = false)
+        public Requester(IPEndPoint destination, int replyPort, IEncryptProvider encryptProvider, IEncryptProvider decrypter, Protocol protocol = Protocol.Udp)
         {
             EncryptProvider = encryptProvider;
 
 
-            Receiver = new Receiver(ReplyPort, decrypter, isTcp);
+            Receiver = new Receiver(ReplyPort, decrypter, protocol);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
 
-            Sender = new Sender(destination, encryptProvider, replyPort, isTcp);
+            Sender = new Sender(destination, encryptProvider, replyPort, protocol);
             SetupMethods();
         }
-        public Requester(IPEndPoint destination, bool isTcp = false)
+        public Requester(IPEndPoint destination, Protocol protocol = Protocol.Udp)
         {
-            Receiver = new Receiver(isTcp);
+            Receiver = new Receiver(protocol);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
 
-            Sender = new Sender(destination, Receiver.Port, isTcp);
+            Sender = new Sender(destination, Receiver.Port, protocol);
             SetupMethods();
         }
-        public Requester(IPEndPoint destination, IEncryptProvider encryptProvider, bool isTcp = false)
-        {
-            EncryptProvider = encryptProvider;
-
-            Receiver = new Receiver(isTcp);
-            Receiver.DataAppear += ResponseAppear;
-            Receiver.Start();
-
-            Sender = new Sender(destination, encryptProvider, Receiver.Port, isTcp);
-            SetupMethods();
-        }
-        public Requester(IPEndPoint destination, IEncryptProvider encryptProvider, IEncryptProvider decryptProvider, bool isTcp = false)
+        public Requester(IPEndPoint destination, IEncryptProvider encryptProvider, Protocol protocol = Protocol.Udp)
         {
             EncryptProvider = encryptProvider;
 
-            Receiver = new Receiver(decryptProvider, isTcp);
+            Receiver = new Receiver(protocol);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
 
-            Sender = new Sender(destination, encryptProvider, Receiver.Port, isTcp);
+            Sender = new Sender(destination, encryptProvider, Receiver.Port, protocol);
+            SetupMethods();
+        }
+        public Requester(IPEndPoint destination, IEncryptProvider encryptProvider, IEncryptProvider decryptProvider, Protocol protocol = Protocol.Udp)
+        {
+            EncryptProvider = encryptProvider;
+
+            Receiver = new Receiver(decryptProvider, protocol);
+            Receiver.DataAppear += ResponseAppear;
+            Receiver.Start();
+
+            Sender = new Sender(destination, encryptProvider, Receiver.Port, protocol);
             SetupMethods();
         }
 

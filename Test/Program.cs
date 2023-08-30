@@ -34,8 +34,10 @@ namespace Test
             writer.Write(Shit);
         }
     }
+
     internal class Program
     {
+        public static Protocol protocol = Protocol.Http;
         static async Task Main(string[] args)
         {
             //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
@@ -48,8 +50,8 @@ namespace Test
         }
         public static async Task TestGet()
         {
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666), 7777);
-            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666);
+            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666), 7777, protocol);
+            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666, protocol);
             responder.RegisterGetHandler<Message>(ModifyGet);
             responder.Start();
 
@@ -79,17 +81,20 @@ namespace Test
             using var crypter = new SimpleEncryptProvider(new AesEncrypter());
 
 
-            var port = PortUtils.GetFreePort();
+            //var port = PortUtils.GetFreePort() ;
+            var port = 8080;
 
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter,crypter);
-            requester.SetPacketType(typeof(ShitPacket<>));
-
-
-            using var responder = new Responder(TimeSpan.FromSeconds(10), port, crypter, crypter);
+            using var responder = new Responder(TimeSpan.FromSeconds(10), port, crypter, crypter, protocol);
             responder.SetPacketType(typeof(ShitPacket<>));
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
-         
+
+
+            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter, crypter, protocol);
+            requester.SetPacketType(typeof(ShitPacket<>));
+
+
+
 
             int count = 0;
             int globalCount = 1;
@@ -98,7 +103,7 @@ namespace Test
             while (globalCount < 10000)
             {
                 // if (requester.Requests.Count < 50)
-               // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
+                // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
 
                 var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5)).ContinueWith(e => Interlocked.Increment(ref count));
@@ -107,9 +112,9 @@ namespace Test
                 //if (stopwatch.ElapsedMilliseconds > globalCount*1000)
                 {
                     Console.Clear();
-                    Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds +" " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
+                    Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds + " " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
                     //count =0;
-                   // stopwatch.Restart();
+                    // stopwatch.Restart();
                     globalCount++;
                 }
 

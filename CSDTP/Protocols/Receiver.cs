@@ -1,7 +1,9 @@
 ﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Protocols.Abstracts;
+using CSDTP.Protocols.Http;
 using CSDTP.Protocols.Udp;
+using Open.Nat;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,43 +22,73 @@ namespace CSDTP.Protocols
 
         public int Port => ReceiverSocket.Port;
 
-        public IEncryptProvider? DecryptProvider 
-        { 
+        public IEncryptProvider? DecryptProvider
+        {
             get => ReceiverSocket.DecryptProvider;
             set => ReceiverSocket.DecryptProvider = value;
         }
 
-        public Receiver(int port, bool isTcp = false)
+        public Receiver(int port, Protocol protocol)
         {
-            if (isTcp)
-                throw new NotImplementedException("TCP NOT IMPLEMENTED");
-            else
-                ReceiverSocket = new UdpReceiver(port);
+            switch (protocol)
+            {
+                case Protocol.Udp:
+                    ReceiverSocket = new UdpReceiver(port);
+                    break;
+                case Protocol.Tcp:
+                    throw new NotImplementedException("TCP NOT IMPLEMENTED");
+                    break;
+                case Protocol.Http:
+                    ReceiverSocket = new HttpReceiver(port);
+                    break;
+            }
+        }
+        public Receiver(int port, IEncryptProvider encryptProvider, Protocol protocol)
+        {
+            switch (protocol)
+            {
+                case Protocol.Udp:
+                    ReceiverSocket = new UdpReceiver(port, encryptProvider);
+                    break;
+                case Protocol.Tcp:
+                    throw new NotImplementedException("TCP NOT IMPLEMENTED");
+                    break;
+                case Protocol.Http:
+                    ReceiverSocket = new HttpReceiver(port, encryptProvider);
+                    break;
+            }
+        }
+        public Receiver(Protocol protocol)
+        {
+            switch (protocol)
+            {
+                case Protocol.Udp:
+                    ReceiverSocket = new UdpReceiver();
+                    break;
+                case Protocol.Tcp:
+                    throw new NotImplementedException("TCP NOT IMPLEMENTED");
+                    break;
+                case Protocol.Http:
+                    ReceiverSocket = new HttpReceiver();
+                    break;
+            }
+        }
+        public Receiver(IEncryptProvider encryptProvider, Protocol protocol)
+        {
+            switch (protocol)
+            {
+                case Protocol.Udp:
+                    ReceiverSocket = new UdpReceiver(encryptProvider);
+                    break;
+                case Protocol.Tcp:
+                    throw new NotImplementedException("TCP NOT IMPLEMENTED");
+                    break;
+                case Protocol.Http:
+                    ReceiverSocket = new HttpReceiver(encryptProvider);
+                    break;
+            }
         }
 
-        public Receiver(int port, IEncryptProvider encryptProvider, bool isTcp = false)
-        {
-            if (isTcp)
-                throw new NotImplementedException("TCP NOT IMPLEMENTED");
-            else
-                ReceiverSocket = new UdpReceiver(port, encryptProvider);
-        }
-        public Receiver(bool isTcp = false)
-        {
-            if (isTcp)
-                throw new NotImplementedException("TCP NOT IMPLEMENTED");
-            else
-                ReceiverSocket = new UdpReceiver();
-
-        }
-
-        public Receiver(IEncryptProvider encryptProvider, bool isTcp = false)
-        {
-            if (isTcp)
-                throw new NotImplementedException("TCP NOT IMPLEMENTED");
-            else
-                ReceiverSocket = new UdpReceiver(encryptProvider);
-        }
 
         public event EventHandler<IPacket> DataAppear
         {
@@ -84,11 +116,6 @@ namespace CSDTP.Protocols
         public void Stop()
         {
             ReceiverSocket.Stop();
-        }
-
-        public void Close()
-        {
-            ReceiverSocket.Close();
         }
     }
 }

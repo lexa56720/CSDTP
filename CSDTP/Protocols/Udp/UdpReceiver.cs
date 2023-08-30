@@ -35,10 +35,6 @@ namespace CSDTP.Protocols.Udp
         {
             Listener = new UdpClient(0);
         }
-        public override void Close()
-        {
-            Dispose();
-        }
 
         public override void Dispose()
         {

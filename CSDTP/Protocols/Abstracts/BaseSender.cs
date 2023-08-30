@@ -47,8 +47,6 @@ namespace CSDTP.Protocols.Abstracts
         public abstract void Dispose();
 
 
-
-
         public async Task<bool> Send<T>(T data,object info) where T : ISerializable<T>
         {
             return await Send<T, Packet<T>>(data, info);
@@ -84,7 +82,6 @@ namespace CSDTP.Protocols.Abstracts
             GetPacket<T, U>(data, info).Serialize(writer);
             return ms.ToArray();
         }
-
         private byte[] GetBytes<T, U>(T data, IEncryptProvider encryptProvider, object info) where T : ISerializable<T> where U : Packet<T>, new()
         {
             using var ms = new MemoryStream();
@@ -94,6 +91,7 @@ namespace CSDTP.Protocols.Abstracts
             return ms.ToArray();
         }
 
+
         private byte[] GetBytes<T, U>(T data) where T : ISerializable<T> where U : Packet<T>, new()
         {
             using var ms = new MemoryStream();
@@ -101,7 +99,6 @@ namespace CSDTP.Protocols.Abstracts
             GetPacket<T, U>(data).Serialize(writer);
             return ms.ToArray();
         }
-
         private byte[] GetBytes<T, U>(T data, IEncryptProvider encryptProvider) where T : ISerializable<T> where U : Packet<T>, new()
         {
             using var ms = new MemoryStream();
@@ -110,7 +107,6 @@ namespace CSDTP.Protocols.Abstracts
 
             return ms.ToArray();
         }
-
 
 
         private Packet<T> GetPacket<T, U>(T data) where T : ISerializable<T> where U : Packet<T>, new()
@@ -134,7 +130,5 @@ namespace CSDTP.Protocols.Abstracts
                 InfoObj=info
             };
         }
-
-        public abstract void Close();
     }
 }

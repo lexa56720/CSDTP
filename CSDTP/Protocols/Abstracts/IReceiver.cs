@@ -18,7 +18,5 @@ namespace CSDTP.Protocols.Abstracts
         public void Start();
 
         public void Stop();
-
-        public void Close();
     }
 }

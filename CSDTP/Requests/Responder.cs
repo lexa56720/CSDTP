@@ -23,7 +23,7 @@ namespace CSDTP.Requests
     {
         private IEncryptProvider? EncryptProvider { get; init; }
 
-        public bool IsTcp { get; }
+        public Protocol Protocol { get; }
         public int ListenPort => Receiver.Port;
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
@@ -41,16 +41,16 @@ namespace CSDTP.Requests
         private CompiledMethod SendMethod { get; set; }
         private CompiledMethod SendCustomPacketMethod { get; set; }
 
-        public Responder(TimeSpan sendersTimeout, int port, bool isTcp = false)
+        public Responder(TimeSpan sendersTimeout, int port, Protocol protocol = Protocol.Udp)
         {
             Senders = new LifeTimeController<ISender>(sendersTimeout);
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
-            Receiver = new Receiver(port < 0 ? 0 : port, isTcp);
+            Receiver = new Receiver(port < 0 ? 0 : port, protocol);
             Receiver.DataAppear += RequestAppear;
-            IsTcp = isTcp;
+            Protocol = protocol;
             SetupSendMethod();
         }
-        public Responder(TimeSpan sendersTimeout, int port, IEncryptProvider encryptProvider, bool isTcp = false)
+        public Responder(TimeSpan sendersTimeout, int port, IEncryptProvider encryptProvider, Protocol protocol = Protocol.Udp)
         {
             EncryptProvider = encryptProvider;
 
@@ -58,13 +58,13 @@ namespace CSDTP.Requests
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
 
 
-            Receiver = new Receiver(port < 0 ? 0 : port, isTcp);
+            Receiver = new Receiver(port < 0 ? 0 : port, protocol);
             Receiver.DataAppear += RequestAppear;
 
-            IsTcp = isTcp;
+            Protocol = protocol;
             SetupSendMethod();
         }
-        public Responder(TimeSpan sendersTimeout, int port, IEncryptProvider encrypterProvider, IEncryptProvider decryptProvider, bool isTcp = false)
+        public Responder(TimeSpan sendersTimeout, int port, IEncryptProvider encrypterProvider, IEncryptProvider decryptProvider, Protocol protocol = Protocol.Udp)
         {
             EncryptProvider = encrypterProvider;
 
@@ -72,10 +72,10 @@ namespace CSDTP.Requests
             RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
 
 
-            Receiver = new Receiver(port < 0 ? 0 : port, decryptProvider, isTcp);
+            Receiver = new Receiver(port < 0 ? 0 : port, decryptProvider, protocol);
             Receiver.DataAppear += RequestAppear;
 
-            IsTcp = isTcp;
+            Protocol = protocol;
             SetupSendMethod();
         }
 
@@ -227,9 +227,9 @@ namespace CSDTP.Requests
         private ISender GetNewSender(IPEndPoint destination)
         {
             if (EncryptProvider != null)
-                return new Sender(destination, EncryptProvider, IsTcp);
+                return new Sender(destination, EncryptProvider, Protocol);
             else
-                return new Sender(destination, IsTcp);
+                return new Sender(destination, Protocol);
         }
     }
 }

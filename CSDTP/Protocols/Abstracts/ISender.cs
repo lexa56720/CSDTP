@@ -17,7 +17,6 @@ namespace CSDTP.Protocols.Abstracts
 
         public int ReplyPort { get; }
         public bool IsAvailable { get; }
-        public void Close();
 
 
         public Task<bool> Send<T>(T data, object info) where T : ISerializable<T>;
