@@ -10,9 +10,8 @@ namespace CSDTP.Utils
 {
     public static class PortUtils
     {
-        public static int GetFreePort()
+        public static int GetFreePort(int startingPort=1)
         {
-            int startingPort = 8080;
             var properties = IPGlobalProperties.GetIPGlobalProperties();
 
             //getting active connections

@@ -2,8 +2,10 @@
 using CSDTP.Protocols.Abstracts;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,7 +17,7 @@ namespace CSDTP.Protocols.Http
 
         private HttpListener Listener;
 
-        public override int Port => new Uri(Listener.Prefixes.First()).Port;
+        public override int Port => GetPortFromUrl(Listener.Prefixes.First());
         public HttpReceiver()
         {
             Listener = new HttpListener();
@@ -24,19 +26,19 @@ namespace CSDTP.Protocols.Http
         public HttpReceiver(int port) : base(port)
         {
             Listener = new HttpListener();
-            Listener.Prefixes.Add($"http://{IPAddress.Loopback}:{port}/");
+            Listener.Prefixes.Add($"http://+:{port}/");
         }
 
         public HttpReceiver(IEncryptProvider decrypter) : base(decrypter)
         {
             Listener = new HttpListener();
-            Listener.Prefixes.Add($"http://{IPAddress.Loopback}:{Utils.PortUtils.GetFreePort()}/");
+            Listener.Prefixes.Add($"http://+:{Utils.PortUtils.GetFreePort()}/");
         }
 
         public HttpReceiver(int port, IEncryptProvider decryptProvider) : base(port, decryptProvider)
         {
             Listener = new HttpListener();
-            Listener.Prefixes.Add($"http://{IPAddress.Loopback}:{port}/");
+            Listener.Prefixes.Add($"http://+:{port}/");
         }
 
         public override void Dispose()
@@ -48,8 +50,10 @@ namespace CSDTP.Protocols.Http
         public override void Start()
         {
             base.Start();
-            Listener.Start();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                ModifyHttpSettings(Port);
 
+            Listener.Start();
             TokenSource = new CancellationTokenSource();
             var token = TokenSource.Token;
 
@@ -89,7 +93,7 @@ namespace CSDTP.Protocols.Http
 
         public override void Stop()
         {
-            base.Stop();          
+            base.Stop();
         }
         private async Task<byte[]> ReadBytes(HttpListenerContext context, CancellationToken token)
         {
@@ -98,5 +102,30 @@ namespace CSDTP.Protocols.Http
             return bytes;
         }
 
+
+        private void ModifyHttpSettings(int port)
+        {
+            string everyone = new System.Security.Principal.SecurityIdentifier(
+                "S-1-1-0").Translate(typeof(System.Security.Principal.NTAccount)).ToString();
+
+            string parameter = $"http add urlacl url=http://+:{port}/ user=\\{everyone}";
+
+            ProcessStartInfo psi = new ProcessStartInfo("netsh", parameter);
+
+            psi.Verb = "runas";
+            psi.RedirectStandardOutput = false;
+            psi.CreateNoWindow = true;
+            psi.WindowStyle = ProcessWindowStyle.Hidden;
+            psi.UseShellExecute = true;
+            var proc = Process.Start(psi);
+            proc.WaitForExit();
+        }
+        private int GetPortFromUrl(string url)
+        {
+            var startIndex = url.IndexOf(':', 5) + 1;
+            var endIndex = url.IndexOf('/', startIndex);
+            var port = url.Substring(startIndex, endIndex - startIndex);
+            return int.Parse(port);
+        }
     }
 }
