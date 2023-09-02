@@ -15,8 +15,6 @@ namespace CSDTP.Protocols.Udp
     {
         private UdpClient Listener;
 
-        private CancellationTokenSource TokenSource = new CancellationTokenSource();
-
         public override int Port => ((IPEndPoint)Listener.Client.LocalEndPoint).Port;
         public UdpReceiver(int port) : base(port)
         {
@@ -44,32 +42,25 @@ namespace CSDTP.Protocols.Udp
             Listener.Dispose();
         }
 
-        public override void Start()
+
+        protected override async Task ReceiveWork(CancellationToken token)
         {
-            base.Start();
-            TokenSource.Dispose();
-            TokenSource = new CancellationTokenSource();
-            var token = TokenSource.Token;
-
-            Task.Run(async () =>
+            while (IsReceiving)
             {
-                while (IsReceiving)
+                try
                 {
-                    try
-                    {
-                        var data = await Listener.ReceiveAsync(token);
+                    var data = await Listener.ReceiveAsync(token);
 
-                        token.ThrowIfCancellationRequested();
-                        if (IsAllowed(data.RemoteEndPoint))
-                            ReceiverQueue.Add(new Tuple<byte[], IPAddress>(data.Buffer, data.RemoteEndPoint.Address));
-                    }
-                    catch (OperationCanceledException e)
-                    {
-                        return;
-                    }
-
+                    token.ThrowIfCancellationRequested();
+                    if (IsAllowed(data.RemoteEndPoint))
+                        ReceiverQueue.Add(new Tuple<byte[], IPAddress>(data.Buffer, data.RemoteEndPoint.Address));
                 }
-            });
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+            }
         }
     }
 }

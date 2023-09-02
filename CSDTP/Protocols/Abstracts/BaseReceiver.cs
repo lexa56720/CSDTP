@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -19,6 +20,8 @@ namespace CSDTP.Protocols.Abstracts
     public abstract class BaseReceiver : IReceiver
     {
         public virtual bool IsReceiving { get; protected set; }
+
+        protected CancellationTokenSource TokenSource { get; set; }
 
 
         private protected QueueProcessor<Tuple<byte[], IPAddress>> ReceiverQueue;
@@ -65,7 +68,16 @@ namespace CSDTP.Protocols.Abstracts
 
             IsReceiving = true;
             ReceiverQueue.Start();
+
+            TokenSource = new CancellationTokenSource();
+            var token = TokenSource.Token;
+            Task.Run(async () =>
+            {
+               await ReceiveWork(token);
+            });
         }
+
+        protected abstract Task ReceiveWork(CancellationToken token);
 
         public virtual void Stop()
         {

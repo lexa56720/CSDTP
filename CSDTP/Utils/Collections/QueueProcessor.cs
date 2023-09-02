@@ -46,6 +46,11 @@ namespace CSDTP.Utils.Collections
             Queue.Enqueue(item);
         }
 
+        public void Clear()
+        {
+            Queue.Clear();
+        }
+
         private void HandleQueue()
         {
             int count = 0;
@@ -66,6 +71,7 @@ namespace CSDTP.Utils.Collections
                 }
             });
         }
+
         private void ProcessSequentially(int count)
         {
             Task.Run(() =>
@@ -87,6 +93,5 @@ namespace CSDTP.Utils.Collections
                 });
             });
         }
-
     }
 }

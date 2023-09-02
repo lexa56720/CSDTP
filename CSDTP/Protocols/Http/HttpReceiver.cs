@@ -7,13 +7,13 @@ using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CSDTP.Protocols.Http
 {
     internal class HttpReceiver : BaseReceiver
     {
-        private CancellationTokenSource TokenSource = new CancellationTokenSource();
 
         private HttpListener Listener;
 
@@ -47,54 +47,53 @@ namespace CSDTP.Protocols.Http
             TokenSource.Cancel();
             TokenSource.Dispose();
         }
-        public override void Start()
-        {
-            base.Start();
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                ModifyHttpSettings(Port);
-
-            Listener.Start();
-            TokenSource = new CancellationTokenSource();
-            var token = TokenSource.Token;
-
-            Task.Run(async () =>
-            {
-                while (IsReceiving)
-                {
-                    try
-                    {
-                        var data = await Listener.GetContextAsync();
-
-                        token.ThrowIfCancellationRequested();
-                        if (IsAllowed(data.Request.RemoteEndPoint))
-                        {
-                            using Stream output = data.Response.OutputStream;
-                            await output.FlushAsync(token);
-                            token.ThrowIfCancellationRequested();
-
-                            ReceiverQueue.Add(new Tuple<byte[], IPAddress>(
-                                await ReadBytes(data, token),
-                                data.Request.RemoteEndPoint.Address));
-                        }
-
-
-                    }
-                    catch (OperationCanceledException e)
-                    {
-                        return;
-                    }
-
-                }
-                Listener.Stop();
-                Listener.Close();
-            }, token);
-        }
-
-
         public override void Stop()
         {
             base.Stop();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                ModifyHttpSettings(Port, false);
         }
+        public override void Start()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                ModifyHttpSettings(Port,true);
+            Listener.Start();
+            base.Start();
+        }
+
+        protected override async Task ReceiveWork(CancellationToken token)
+        {
+            while (IsReceiving)
+            {
+                try
+                {
+                    var data = await Listener.GetContextAsync();
+
+                    token.ThrowIfCancellationRequested();
+                    if (IsAllowed(data.Request.RemoteEndPoint))
+                    {
+                        using Stream output = data.Response.OutputStream;
+                        await output.FlushAsync(token);
+                        token.ThrowIfCancellationRequested();
+
+                        ReceiverQueue.Add(new Tuple<byte[], IPAddress>(
+                            await ReadBytes(data, token),
+                            data.Request.RemoteEndPoint.Address));
+                    }
+
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+            }
+            Listener.Stop();
+            Listener.Close();
+            ReceiverQueue.Clear();
+        }
+
+
         private async Task<byte[]> ReadBytes(HttpListenerContext context, CancellationToken token)
         {
             var bytes = new byte[context.Request.ContentLength64];
@@ -103,12 +102,12 @@ namespace CSDTP.Protocols.Http
         }
 
 
-        private void ModifyHttpSettings(int port)
+        private void ModifyHttpSettings(int port,bool isAdd)
         {
-            string everyone = new System.Security.Principal.SecurityIdentifier(
-                "S-1-1-0").Translate(typeof(System.Security.Principal.NTAccount)).ToString();
-
-            string parameter = $"http add urlacl url=http://+:{port}/ user=\\{everyone}";
+            string everyone = new System.Security.Principal.SecurityIdentifier("S-1-1-0")
+                .Translate(typeof(System.Security.Principal.NTAccount)).ToString();
+            var command = isAdd? "add" : "delete";
+            string parameter = $"http {command} urlacl url=http://+:{port}/ user=\\{everyone}";
 
             ProcessStartInfo psi = new ProcessStartInfo("netsh", parameter);
 
@@ -124,7 +123,7 @@ namespace CSDTP.Protocols.Http
         {
             var startIndex = url.IndexOf(':', 5) + 1;
             var endIndex = url.IndexOf('/', startIndex);
-            var port = url.Substring(startIndex, endIndex - startIndex);
+            var port = url[startIndex..endIndex];
             return int.Parse(port);
         }
     }

@@ -37,13 +37,13 @@ namespace Test
 
     internal class Program
     {
-        public static Protocol protocol = Protocol.Http;
+        public static Protocol protocol = Protocol.Udp;
         static async Task Main(string[] args)
         {
             //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
 
 
-            // await TestGet();
+            await TestGet();
             await TestPost();
             Console.ReadLine();
 
