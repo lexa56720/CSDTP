@@ -12,7 +12,7 @@ namespace CSDTP.Utils.Performance
 {
     internal class CompiledMethod
     {
-        private ConcurrentDictionary<Type[], Func<object[], object>> Methods = new (new TypesEqualityComparer());
+        private ConcurrentDictionary<Type[], Func<object, object[], object>> Methods = new(new TypesEqualityComparer());
 
         private MethodInfo Method;
         public CompiledMethod(MethodInfo method)
@@ -34,7 +34,7 @@ namespace CSDTP.Utils.Performance
 
                 Methods.TryAdd(type, result);
             }
-            return result(args);
+            return result(obj, args);
         }
         public object Invoke(object obj, Type[] genericTypes, params object[] args)
         {
@@ -44,15 +44,17 @@ namespace CSDTP.Utils.Performance
 
                 Methods.TryAdd(genericTypes, result);
             }
-            return result(args);
+            return result(obj, args);
         }
 
-        private static Func<object[], object> GetMethodInvoke(object instance, MethodInfo methodInfo)
+        private static Func<object, object[], object> GetMethodInvoke(object instance, MethodInfo methodInfo)
         {
             // Получаем параметры метода
             ParameterInfo[] methodParameters = methodInfo.GetParameters();
 
             // Создаем параметры выражения
+            ParameterExpression instanceParam = Expression.Parameter(typeof(object), "inst");
+
             ParameterExpression argsParam = Expression.Parameter(typeof(object[]), "args");
 
             // Создаем выражения для преобразования аргументов к нужным типам
@@ -68,22 +70,17 @@ namespace CSDTP.Utils.Performance
 
             // Создаем выражение вызова метода
             Expression callExpression;
-            if (instance != null)
-            {
-                Expression instanceExpression = Expression.Constant(instance);
-                callExpression = Expression.Call(instanceExpression, methodInfo, argExpressions);
-            }
-            else
-            {
-                callExpression = Expression.Call(methodInfo, argExpressions);
-            }
+            Expression instanceExpression = Expression.Convert(instanceParam, instance.GetType());
+            callExpression = Expression.Call(instanceExpression, methodInfo, argExpressions);
+
 
             // Создаем выражение преобразования результата к object
             UnaryExpression resultConvert = Expression.Convert(callExpression, typeof(object));
 
             // Создаем лямбда-выражение
-            Expression<Func<object[], object>> lambdaExpression = Expression.Lambda<Func<object[], object>>(
+            Expression<Func<object, object[], object>> lambdaExpression = Expression.Lambda<Func<object, object[], object>>(
                 resultConvert,
+                instanceParam,
                 argsParam
             );
 
