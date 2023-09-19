@@ -159,8 +159,8 @@ namespace CSDTP.Requests
                     Requests.TryRemove(new KeyValuePair<Guid, TaskCompletionSource<IPacket>>(container.Id, resultSource));
                 }
 
-                var result = response.Result as Packet<RequestContainer<T>>;
-                if (response.IsCompletedSuccessfully && result!=null && result.Data!=null)
+                if (response.IsCompletedSuccessfully && 
+                    response.Result is Packet<RequestContainer<T>> result && result.Data != null)
                     return result.Data.Data;
                 return default;
             }
