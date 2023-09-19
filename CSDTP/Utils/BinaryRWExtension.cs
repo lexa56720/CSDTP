@@ -61,7 +61,7 @@ namespace CSDTP.Utils
             var length = reader.ReadInt32();
             var array = new T[length];
             for (int i = 0; i < length; i++)
-                T.Deserialize(reader);
+                array[i]=T.Deserialize(reader);
             return array;
         }
 

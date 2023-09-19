@@ -106,7 +106,8 @@ namespace Test
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
 
-                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5)).ContinueWith(e => Interlocked.Increment(ref count));
+                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                    .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
                 //if (stopwatch.ElapsedMilliseconds > globalCount*1000)
@@ -130,5 +131,6 @@ namespace Test
         {
 
         }
+
     }
 }
