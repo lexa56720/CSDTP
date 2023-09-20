@@ -134,7 +134,10 @@ namespace CSDTP.Requests
 
         public async Task<T?> PostAsync<T, U>(U data, TimeSpan timeout) where U : ISerializable<U> where T : ISerializable<T>
         {
-            var container = new RequestContainer<U>(data, RequestType.Post);
+            var container = new RequestContainer<U>(data, RequestType.Post)
+            {
+                ResponseObjType = typeof(T)
+            };
             await Send(container);
 
             return await GetResponse<T, U>(container, timeout);

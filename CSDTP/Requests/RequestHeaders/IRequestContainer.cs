@@ -20,6 +20,8 @@ namespace CSDTP.Requests.RequestHeaders
 
         public object DataObj { get; set; }
 
+        public Type ResponseObjType { get; set; }
+
         public RequestType RequestType { get; set; }
 
     }

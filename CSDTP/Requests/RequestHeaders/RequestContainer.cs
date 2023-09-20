@@ -1,4 +1,6 @@
-﻿using System;
+﻿using CSDTP.Utils;
+using CSDTP.Utils.Performance;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +18,8 @@ namespace CSDTP.Requests.RequestHeaders
 
         public Type DataType { get; set; }
 
+        public Type ResponseObjType { get; set; }
+
         public object DataObj
         {
             get
@@ -27,6 +31,8 @@ namespace CSDTP.Requests.RequestHeaders
                 Data = (T)value;
             }
         }
+
+        private static GlobalByteDictionary<Type> TypeDictionary = new GlobalByteDictionary<Type>();
 
         public RequestContainer(T data, RequestType type)
         {
@@ -55,12 +61,24 @@ namespace CSDTP.Requests.RequestHeaders
         public static RequestContainer<T> Deserialize(BinaryReader reader)
         {
             var id = new Guid(reader.ReadBytes(16));
-            return new RequestContainer<T>(T.Deserialize(reader), id);
+            var requestType = (RequestType)reader.ReadByte();
+            if (requestType == RequestType.Post)
+            {
+                var resposeObjType = TypeDictionary.Get(reader.ReadByteArray(), b => Type.GetType(Compressor.Decompress(b)));
+                return new RequestContainer<T>(T.Deserialize(reader), id, requestType)
+                {
+                    ResponseObjType=resposeObjType
+                };
+            }
+            return new RequestContainer<T>(T.Deserialize(reader), id, requestType);
         }
 
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Id.ToByteArray());
+            writer.Write((byte)RequestType);
+            if (RequestType == RequestType.Post)
+                writer.WriteBytes(Compressor.Compress(ResponseObjType.AssemblyQualifiedName));
             Data.Serialize(writer);
         }
     }

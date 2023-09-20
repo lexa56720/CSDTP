@@ -27,8 +27,8 @@ namespace CSDTP.Requests
         public int ListenPort => Receiver.Port;
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
-        private Dictionary<Type, Action<object, IPacketInfo>> GetHandlers = new Dictionary<Type, Action<object, IPacketInfo>>();
-        private Dictionary<Type, Func<object, IPacketInfo, object?>> PostHandlers = new Dictionary<Type, Func<object, IPacketInfo, object>>();
+        private Dictionary<Type, Action<object, IPacketInfo>> GetHandlers = new();
+        private Dictionary<(Type, Type), Func<object, IPacketInfo, object?>> PostHandlers = new();
 
         private CompiledActivator Activator = new CompiledActivator();
 
@@ -141,7 +141,7 @@ namespace CSDTP.Requests
         }
         public void RegisterPostHandler<T, U>(Func<T, IPacketInfo, U?> action) where U : ISerializable<U>
         {
-            PostHandlers.Add(typeof(T), new Func<object, IPacketInfo, object?>((o, i) => action((T)o, i)));
+            PostHandlers.Add((typeof(T), typeof(U)), new Func<object, IPacketInfo, object?>((o, i) => action((T)o, i)));
         }
 
         public void RegisterGetHandler<T>(Action<T> action)
@@ -150,7 +150,7 @@ namespace CSDTP.Requests
         }
         public void RegisterPostHandler<T, U>(Func<T, U?> action) where U : ISerializable<U>
         {
-            PostHandlers.Add(typeof(T), new Func<object, IPacketInfo, object?>((o, i) => action((T)o)));
+            PostHandlers.Add((typeof(T), typeof(U)), new Func<object, IPacketInfo, object?>((o, i) => action((T)o)));
         }
 
         private void RequestAppear(object? sender, IPacket e)
@@ -163,7 +163,7 @@ namespace CSDTP.Requests
             {
                 var request = (IRequestContainer)packet.DataObj;
 
-                if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue(request.DataType, out var postHandler))
+                if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue((request.DataType,request.ResponseObjType), out var postHandler))
                     HandlePostRequest(packet, request, postHandler);
 
                 else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out var getHandler))
@@ -180,7 +180,7 @@ namespace CSDTP.Requests
             handler(request.DataObj, packet);
         }
 
-        private void HandlePostRequest(IPacket packet, IRequestContainer request, Func<object, IPacketInfo, object> handler)
+        private void HandlePostRequest(IPacket packet, IRequestContainer request, Func<object, IPacketInfo, object?> handler)
         {
             var responseObj = handler(request.DataObj, packet);
 
