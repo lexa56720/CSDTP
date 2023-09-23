@@ -32,7 +32,7 @@ namespace CSDTP.Requests
 
         private CompiledActivator Activator = new CompiledActivator();
 
-        private QueueProcessor<IPacket> RequestsQueue { get; set; }
+        private QueueProcessorAsync<IPacket> RequestsQueue { get; set; }
         private LifeTimeController<ISender> Senders { get; set; }
         private IReceiver Receiver { get; set; }
 
@@ -44,7 +44,7 @@ namespace CSDTP.Requests
         public Responder(TimeSpan sendersTimeout, int port, Protocol protocol = Protocol.Udp)
         {
             Senders = new LifeTimeController<ISender>(sendersTimeout);
-            RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
+            RequestsQueue = new QueueProcessorAsync<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
             Receiver = new Receiver(port < 0 ? 0 : port, protocol);
             Receiver.DataAppear += RequestAppear;
             Protocol = protocol;
@@ -55,7 +55,7 @@ namespace CSDTP.Requests
             EncryptProvider = encryptProvider;
 
             Senders = new LifeTimeController<ISender>(sendersTimeout);
-            RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
+            RequestsQueue = new QueueProcessorAsync<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
 
 
             Receiver = new Receiver(port < 0 ? 0 : port, protocol);
@@ -69,7 +69,7 @@ namespace CSDTP.Requests
             EncryptProvider = encrypterProvider;
 
             Senders = new LifeTimeController<ISender>(sendersTimeout);
-            RequestsQueue = new QueueProcessor<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
+            RequestsQueue = new QueueProcessorAsync<IPacket>(HandleRequest, 5, TimeSpan.FromMilliseconds(20));
 
 
             Receiver = new Receiver(port < 0 ? 0 : port, decryptProvider, protocol);
@@ -157,14 +157,14 @@ namespace CSDTP.Requests
         {
             RequestsQueue.Add(e);
         }
-        private void HandleRequest(IPacket packet)
+        private async Task HandleRequest(IPacket packet)
         {
             try
             {
                 var request = (IRequestContainer)packet.DataObj;
 
-                if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue((request.DataType,request.ResponseObjType), out var postHandler))
-                    HandlePostRequest(packet, request, postHandler);
+                if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue((request.DataType, request.ResponseObjType), out var postHandler))
+                    await HandlePostRequest(packet, request, postHandler);
 
                 else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out var getHandler))
                     HandleGetRequest(packet, request, getHandler);
@@ -180,7 +180,7 @@ namespace CSDTP.Requests
             handler(request.DataObj, packet);
         }
 
-        private void HandlePostRequest(IPacket packet, IRequestContainer request, Func<object, IPacketInfo, object?> handler)
+        private async Task HandlePostRequest(IPacket packet, IRequestContainer request, Func<object, IPacketInfo, object?> handler)
         {
             var responseObj = handler(request.DataObj, packet);
 
@@ -191,7 +191,7 @@ namespace CSDTP.Requests
 
             var response = GetResponse(responseType, responseObj, request.Id);
 
-            Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort), packet);
+            await Reply(response, new IPEndPoint(packet.Source, packet.ReplyPort), packet);
         }
         private IRequestContainer GetResponse(Type responseType, object responseObject, Guid id)
         {
@@ -202,7 +202,7 @@ namespace CSDTP.Requests
             response.DataObj = responseObject;
             return response;
         }
-        private void Reply(IRequestContainer data, IPEndPoint destination, IPacket request)
+        private async Task Reply(IRequestContainer data, IPEndPoint destination, IPacket request)
         {
             var sender = Senders.Get(s => s.Destination.Equals(destination) && s.IsAvailable);
             if (sender == null)
@@ -210,7 +210,7 @@ namespace CSDTP.Requests
                 sender = GetNewSender(destination);
                 Senders.Add(sender);
             }
-            Send(sender, data, request);
+            await Send(sender, data, request);
         }
 
         private async Task<bool> Send(ISender sender, IRequestContainer data, IPacket request)

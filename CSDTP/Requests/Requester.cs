@@ -183,13 +183,17 @@ namespace CSDTP.Requests
                 throw new Exception("Request sending error");
 
             var container = new RequestContainer<U>(data, RequestType.Get);
-            return await Sender.Send(container);
+            return await Send(container);
         }
 
         private async Task<bool> Send<U>(RequestContainer<U> container) where U : ISerializable<U>
         {
             if (PacketType != null)
-                return await (Task<bool>)SendCustomPacket.Invoke(Sender, new Type[] { typeof(RequestContainer<U>), PacketType.MakeGenericType(typeof(RequestContainer<U>)) }, container);
+                return await (Task<bool>)SendCustomPacket.Invoke(Sender, new Type[] 
+                { 
+                    typeof(RequestContainer<U>), 
+                    PacketType.MakeGenericType(typeof(RequestContainer<U>)) 
+                }, container);
             return await Sender.Send(container);
         }
     }
