@@ -19,7 +19,7 @@ namespace CSDTP.Packets
         public bool IsHasData;
 
         public T? Data;
-        public object DataObj => Data;
+        public object? DataObj => Data;
 
         public CryptMethod CryptMethod { get; private set; } = CryptMethod.None;
 
