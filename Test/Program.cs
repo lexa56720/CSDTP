@@ -95,7 +95,6 @@ namespace Test
 
 
 
-
             int count = 0;
             int globalCount = 1;
             Stopwatch stopwatch = Stopwatch.StartNew();
@@ -129,7 +128,7 @@ namespace Test
         }
         static void ModifyGet(Message msg, IPacketInfo info)
         {
-
+            
         }
 
     }

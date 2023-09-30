@@ -27,6 +27,8 @@ namespace CSDTP.Requests
         public int ListenPort => Receiver.Port;
         public bool IsRunning => Receiver.IsReceiving && RequestsQueue.IsRunning;
 
+        public bool ResponseIfNull { get; set; } = true;
+
         private Dictionary<Type, Action<object, IPacketInfo>> GetHandlers = new();
         private Dictionary<(Type, Type), Func<object, IPacketInfo, object?>> PostHandlers = new();
 
@@ -153,6 +155,13 @@ namespace CSDTP.Requests
             PostHandlers.Add((typeof(T), typeof(U)), new Func<object, IPacketInfo, object?>((o, i) => action((T)o)));
         }
 
+        public async Task ResponseManually<T>(IRequestContainer request, IPacket requestPacket, T response) where T : ISerializable<T>
+        {
+            await Reply(new RequestContainer<T>(response, request.Id, RequestType.Response),
+                        new IPEndPoint(requestPacket.Source, requestPacket.ReplyPort),
+                        requestPacket);
+        }
+
         private void RequestAppear(object? sender, IPacket e)
         {
             RequestsQueue.Add(e);
@@ -184,7 +193,11 @@ namespace CSDTP.Requests
         {
             var responseObj = handler(request.DataObj, packet);
 
-            responseObj ??= new ResponseError();
+            if (responseObj == null)
+                if (ResponseIfNull)
+                    responseObj = new ResponseError();
+                else
+                    return;
 
             var genericType = responseObj.GetType();
             var responseType = typeof(RequestContainer<>).MakeGenericType(genericType);
@@ -202,7 +215,8 @@ namespace CSDTP.Requests
             response.DataObj = responseObject;
             return response;
         }
-        private async Task Reply(IRequestContainer data, IPEndPoint destination, IPacket request)
+
+        private async Task<bool> Reply(IRequestContainer data, IPEndPoint destination, IPacket request)
         {
             var sender = Senders.Get(s => s.Destination.Equals(destination) && s.IsAvailable);
             if (sender == null)
@@ -210,9 +224,8 @@ namespace CSDTP.Requests
                 sender = GetNewSender(destination);
                 Senders.Add(sender);
             }
-            await Send(sender, data, request);
+            return await Send(sender, data, request);
         }
-
         private async Task<bool> Send(ISender sender, IRequestContainer data, IPacket request)
         {
             if (PacketType != null)
