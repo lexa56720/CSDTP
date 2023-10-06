@@ -31,7 +31,7 @@ namespace CSDTP.Packets
 
         public DateTime ReceiveTime { get; set; }
 
-        public IPAddress Source { get; set; }
+        public IPAddress? Source { get; set; }
 
         public object? InfoObj { get; set; }
 
@@ -77,6 +77,8 @@ namespace CSDTP.Packets
         private void CryptData(BinaryWriter writer, IEncryptProvider encryptProvider)
         {
             var crypter = encryptProvider.GetEncrypter(this);
+            if (crypter == null)
+                return;
             writer.Write((byte)crypter.CryptMethod);
             if (IsHasData)
             {
@@ -94,7 +96,7 @@ namespace CSDTP.Packets
 
 
             if (IsHasData && CryptMethod != CryptMethod.None)
-                Data = DecryptData<T>(reader, encryptProvider);
+                Data = DecryptData(reader, encryptProvider);
             else
                 Data = T.Deserialize(reader);
 
@@ -120,10 +122,11 @@ namespace CSDTP.Packets
         {
 
         }
-        private T DecryptData<T>(BinaryReader reader, IEncryptProvider encryptProvider) where T : ISerializable<T>
+        private T? DecryptData(BinaryReader reader, IEncryptProvider encryptProvider)
         {
             var crypter = encryptProvider.GetDecrypter(this);
-            ArgumentNullException.ThrowIfNull(crypter);
+            if (crypter == null)
+                return default;
 
             var ms = (MemoryStream)reader.BaseStream;
 

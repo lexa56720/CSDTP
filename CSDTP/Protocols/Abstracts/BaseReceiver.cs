@@ -13,7 +13,6 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CSDTP.Protocols.Abstracts
 {
@@ -21,14 +20,14 @@ namespace CSDTP.Protocols.Abstracts
     {
         public virtual bool IsReceiving { get; protected set; }
 
-        protected CancellationTokenSource TokenSource { get; set; }
+        protected CancellationTokenSource? TokenSource { get; set; }
 
 
         private protected QueueProcessor<Tuple<byte[], IPAddress>> ReceiverQueue;
 
-        private CompiledActivator Activator=new CompiledActivator();
+        private CompiledActivator Activator=new();
 
-        private GlobalByteDictionary<Type> PacketType = new GlobalByteDictionary<Type>();
+        private GlobalByteDictionary<Type> PacketType = new();
         public IEncryptProvider? DecryptProvider { get; set; }
 
         public virtual int Port { get; }

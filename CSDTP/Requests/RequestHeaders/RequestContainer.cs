@@ -18,7 +18,7 @@ namespace CSDTP.Requests.RequestHeaders
 
         public Type DataType { get; set; }
 
-        public Type ResponseObjType { get; set; }
+        public Type? ResponseObjType { get; set; }
 
         public object DataObj
         {
@@ -32,7 +32,7 @@ namespace CSDTP.Requests.RequestHeaders
             }
         }
 
-        private static GlobalByteDictionary<Type> TypeDictionary = new GlobalByteDictionary<Type>();
+        private static GlobalByteDictionary<Type> TypeDictionary = new();
 
         public RequestContainer(T data, RequestType type)
         {
@@ -48,16 +48,8 @@ namespace CSDTP.Requests.RequestHeaders
             RequestType = type;
             DataType = typeof(T);
         }
-        public RequestContainer(T data, Guid id)
-        {
-            Data = data;
-            Id = id;
-            DataType = typeof(T);
-        }
-        public RequestContainer()
-        {
 
-        }
+        public RequestContainer() { }
         public static RequestContainer<T> Deserialize(BinaryReader reader)
         {
             var id = new Guid(reader.ReadBytes(16));

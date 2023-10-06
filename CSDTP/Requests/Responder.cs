@@ -32,7 +32,7 @@ namespace CSDTP.Requests
         private Dictionary<Type, Action<object, IPacketInfo>> GetHandlers = new();
         private Dictionary<(Type, Type), Func<object, IPacketInfo, object?>> PostHandlers = new();
 
-        private CompiledActivator Activator = new CompiledActivator();
+        private CompiledActivator Activator = new();
 
         private QueueProcessorAsync<IPacket> RequestsQueue { get; set; }
         private LifeTimeController<ISender> Senders { get; set; }
@@ -40,8 +40,8 @@ namespace CSDTP.Requests
 
 
         private Type? PacketType = null;
-        private CompiledMethod SendMethod { get; set; }
-        private CompiledMethod SendCustomPacketMethod { get; set; }
+        private CompiledMethod SendMethod { get; set; } = null!;
+        private CompiledMethod SendCustomPacketMethod { get; set; } = null!;
 
         public Responder(TimeSpan sendersTimeout, int port, Protocol protocol = Protocol.Udp)
         {
@@ -170,9 +170,12 @@ namespace CSDTP.Requests
         {
             try
             {
-                var request = (IRequestContainer)packet.DataObj;
+                var request = (IRequestContainer?)packet.DataObj;
+                if (request == null)
+                    return;
 
-                if (request.RequestType == RequestType.Post && PostHandlers.TryGetValue((request.DataType, request.ResponseObjType), out var postHandler))
+                if (request.RequestType == RequestType.Post && request.ResponseObjType != null &&
+                    PostHandlers.TryGetValue((request.DataType, request.ResponseObjType), out var postHandler))
                     await HandlePostRequest(packet, request, postHandler);
 
                 else if (request.RequestType == RequestType.Get && GetHandlers.TryGetValue(request.DataType, out var getHandler))
@@ -182,7 +185,6 @@ namespace CSDTP.Requests
             {
                 throw new Exception("REQUEST HANDLING FAIL", e);
             }
-
         }
         private void HandleGetRequest(IPacket packet, IRequestContainer request, Action<object, IPacketInfo> handler)
         {

@@ -13,7 +13,7 @@ namespace CSDTP.Packets
     {
         public CryptMethod CryptMethod { get; }
 
-        public IPAddress Source { get; set; }
+        public IPAddress? Source { get; set; }
 
         public object? InfoObj { get; set; }
 

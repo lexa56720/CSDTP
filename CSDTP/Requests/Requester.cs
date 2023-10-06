@@ -31,10 +31,10 @@ namespace CSDTP.Requests
         public IPEndPoint Destination => Sender.Destination;
         public int ReplyPort => Sender.ReplyPort;
 
-        private CompiledMethod SendCustomPacket;
+        private CompiledMethod SendCustomPacket=null!;
 
 
-        public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>>();
+        public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new();
 
         public Requester(IPEndPoint destination, int replyPort, Protocol protocol=Protocol.Udp)
         {
@@ -153,7 +153,7 @@ namespace CSDTP.Requests
                 {
                     await response.WaitAsync(timeout);
                 }
-                catch (TimeoutException ex)
+                catch (TimeoutException)
                 {
                     return default;
                 }
@@ -172,8 +172,8 @@ namespace CSDTP.Requests
         }
         private void ResponseAppear(object? sender, IPacket e)
         {
-            var packet = (IRequestContainer)e.DataObj;
-            if (Requests.TryGetValue(packet.Id, out var request))
+            var requestContainer = (IRequestContainer?)e.DataObj;
+            if (requestContainer != null && Requests.TryGetValue(requestContainer.Id, out var request))
                 request.SetResult(e);
         }
 

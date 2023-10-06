@@ -17,7 +17,6 @@ namespace CSDTP.Protocols
 
         private BaseReceiver ReceiverSocket;
 
-
         public bool IsReceiving { get => ReceiverSocket.IsReceiving; }
 
         public int Port => ReceiverSocket.Port;
