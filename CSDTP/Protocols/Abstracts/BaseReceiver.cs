@@ -99,7 +99,7 @@ namespace CSDTP.Protocols.Abstracts
                 using var reader = new BinaryReader(new MemoryStream(bytes));
 
                 var type = PacketType.Get(reader.ReadByteArray(), b=> Type.GetType(Compressor.Decompress(b)));
-
+                var name = type.FullName;
                 var packet = (IPacket)Activator.CreateInstance(type);
 
                 if (DecryptProvider != null)
@@ -108,6 +108,9 @@ namespace CSDTP.Protocols.Abstracts
                     packet.Deserialize(reader);
 
                 packet.ReceiveTime = DateTime.Now;
+              //  reader.BaseStream.Position = 0;
+               // packet.Deserialize(reader, DecryptProvider);
+
                 packet.Source = source;
                 return packet;
             }

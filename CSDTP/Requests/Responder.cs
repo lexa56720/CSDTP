@@ -16,6 +16,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CSDTP.Requests
 {
@@ -173,7 +174,7 @@ namespace CSDTP.Requests
                 var request = (IRequestContainer?)packet.DataObj;
                 if (request == null)
                     return;
-
+    
                 if (request.RequestType == RequestType.Post && request.ResponseObjType != null &&
                     PostHandlers.TryGetValue((request.DataType, request.ResponseObjType), out var postHandler))
                     await HandlePostRequest(packet, request, postHandler);
@@ -212,8 +213,8 @@ namespace CSDTP.Requests
         {
             var response = (IRequestContainer)Activator.CreateInstance(responseType);
             response.Id = id;
-            response.DataType = responseObject.GetType();
             response.RequestType = RequestType.Response;
+            response.DataType = responseObject.GetType();
             response.DataObj = responseObject;
             return response;
         }
@@ -229,7 +230,7 @@ namespace CSDTP.Requests
             return await Send(sender, data, request);
         }
         private async Task<bool> Send(ISender sender, IRequestContainer data, IPacket request)
-        {
+        {          
             if (PacketType != null)
                 return await (Task<bool>)SendCustomPacketMethod.Invoke(sender, new Type[]
                 {

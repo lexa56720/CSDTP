@@ -22,12 +22,12 @@ namespace CSDTP.Cryptography.Algorithms
 
         public byte[] Decrypt(byte[] data)
         {
-            throw new NotImplementedException();
+            return data;
         }
 
         public byte[] Decrypt(byte[] data, int offset, int count)
         {
-            throw new NotImplementedException();
+            return new Memory<byte>(data, offset, count).ToArray();
         }
 
         public void Dispose()

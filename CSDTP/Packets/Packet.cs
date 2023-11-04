@@ -67,7 +67,6 @@ namespace CSDTP.Packets
             SerializeCustomData(writer);
             writer.Write(ReplyPort);
             writer.Write(SendTime.ToBinary());
-
             writer.Write(IsHasData);
         }
         protected virtual void SerializeCustomData(BinaryWriter writer)
@@ -77,16 +76,20 @@ namespace CSDTP.Packets
         private void CryptData(BinaryWriter writer, IEncryptProvider encryptProvider)
         {
             var crypter = encryptProvider.GetEncrypter(this);
-            if (crypter == null)
-                return;
-            writer.Write((byte)crypter.CryptMethod);
             if (IsHasData)
-            {
-                using var ms = new MemoryStream();
-                using var cryptWriter = new BinaryWriter(ms);
-                Data.Serialize(cryptWriter);
-                writer.Write(crypter.Crypt(ms.ToArray()));
-            }
+                if (crypter != null)
+                {
+                    writer.Write((byte)crypter.CryptMethod);
+                    using var ms = new MemoryStream();
+                    using var cryptWriter = new BinaryWriter(ms);
+                    Data.Serialize(cryptWriter);
+                    writer.Write(crypter.Crypt(ms.ToArray()));
+                }
+                else
+                {
+                    writer.Write((byte)CryptMethod.None);
+                    Data.Serialize(writer);
+                }
         }
 
 
@@ -115,8 +118,8 @@ namespace CSDTP.Packets
             DeserializeCustomData(reader);
             ReplyPort = reader.ReadInt32();
             SendTime = DateTime.FromBinary(reader.ReadInt64());
-            CryptMethod = (CryptMethod)reader.ReadByte();
             IsHasData = reader.ReadBoolean();
+            CryptMethod = (CryptMethod)reader.ReadByte();
         }
         protected virtual void DeserializeCustomData(BinaryReader reader)
         {

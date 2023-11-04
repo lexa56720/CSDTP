@@ -43,7 +43,7 @@ namespace Test
             //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
 
 
-            await TestGet();
+           // await TestGet();
             await TestPost();
             Console.ReadLine();
 
@@ -111,6 +111,7 @@ namespace Test
                 //Console.WriteLine(result.Text);
                 //if (stopwatch.ElapsedMilliseconds > globalCount*1000)
                 {
+                   
                     Console.Clear();
                     Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds + " " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
                     //count =0;
@@ -124,6 +125,7 @@ namespace Test
         static int counter = 0;
         static Message Modify(Message msg, IPacketInfo info)
         {
+            
             return new Message(msg.Text + " " + Interlocked.Increment(ref counter));
         }
         static void ModifyGet(Message msg, IPacketInfo info)
