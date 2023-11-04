@@ -8,7 +8,6 @@ using CSDTP.Requests;
 using CSDTP.Utils;
 using System.Diagnostics;
 using System.Net;
-using System.Reflection.PortableExecutable;
 
 namespace Test
 {

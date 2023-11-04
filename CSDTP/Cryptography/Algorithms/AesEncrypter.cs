@@ -10,6 +10,12 @@ namespace CSDTP.Cryptography.Algorithms
     public class AesEncrypter : IEncrypter
     {
         private Aes AES { get; set; }
+
+        public byte[] Key
+        {
+            get => AES.Key;
+            set => AES.Key = value;
+        }
         public CryptMethod CryptMethod => CryptMethod.Aes;
 
         private bool isDisposed;
