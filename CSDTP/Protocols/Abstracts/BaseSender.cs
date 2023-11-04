@@ -103,6 +103,7 @@ namespace CSDTP.Protocols.Abstracts
         {
             using var ms = new MemoryStream();
             using var writer = new BinaryWriter(ms);
+
             var packet = GetPacket<T, U>(data);
             packet.Serialize(writer, encryptProvider);
 

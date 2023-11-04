@@ -99,7 +99,6 @@ namespace CSDTP.Protocols.Abstracts
                 using var reader = new BinaryReader(new MemoryStream(bytes));
 
                 var type = PacketType.Get(reader.ReadByteArray(), b=> Type.GetType(Compressor.Decompress(b)));
-                var name = type.FullName;
                 var packet = (IPacket)Activator.CreateInstance(type);
 
                 if (DecryptProvider != null)
@@ -108,8 +107,6 @@ namespace CSDTP.Protocols.Abstracts
                     packet.Deserialize(reader);
 
                 packet.ReceiveTime = DateTime.Now;
-              //  reader.BaseStream.Position = 0;
-               // packet.Deserialize(reader, DecryptProvider);
 
                 packet.Source = source;
                 return packet;
@@ -118,11 +115,11 @@ namespace CSDTP.Protocols.Abstracts
             {
                 throw new Exception("PACKET DESERIALIZATION ERROR", ex);
             }
-
         }
+
         protected bool IsAllowed(IPEndPoint ip)
         {
-            return (TrafficLimiter == null) || (TrafficLimiter != null && TrafficLimiter.IsAllowed(ip.Address)) ;
+            return (TrafficLimiter == null) || (TrafficLimiter != null && TrafficLimiter.IsAllowed(ip.Address));
         }
 
         private void HandleData(Tuple<byte[], IPAddress> packetInfo)

@@ -12,26 +12,9 @@ namespace CSDTP.Cryptography.Algorithms
         private Aes AES { get; set; }
         public CryptMethod CryptMethod => CryptMethod.Aes;
 
-        public byte[] Key
-        {
-            get => AES.Key;
-            set
-            {
-                AES.Key = value;
-            }
-        }
-
-        public byte[] IV
-        {
-            get => AES.IV;
-            set
-            {
-                AES.IV = value;
-            }
-        }
-
         private bool isDisposed;
 
+        private object locker = new object();
         public AesEncrypter()
         {
             AES = Aes.Create();
@@ -54,72 +37,81 @@ namespace CSDTP.Cryptography.Algorithms
                 AES.Dispose();
             isDisposed = true;
         }
+
         public byte[] Crypt(byte[] data)
         {
-            AES.GenerateIV();
-            using var encryptor = AES.CreateEncryptor(AES.Key, AES.IV);
+            lock (locker)
+            {
+                AES.GenerateIV();
+                using var encryptor = AES.CreateEncryptor(AES.Key, AES.IV);
 
-            using MemoryStream msEncrypt = new MemoryStream();
-            using CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
+                using var msEncrypt = new MemoryStream();
+                using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
 
-            msEncrypt.Write(AES.IV);
-            csEncrypt.Write(data, 0, data.Length);
-            csEncrypt.FlushFinalBlock();
-            var output = msEncrypt.ToArray();
-            return output;
+                msEncrypt.Write(AES.IV);
+                csEncrypt.Write(data, 0, data.Length);
+                csEncrypt.FlushFinalBlock();
+
+                return msEncrypt.ToArray();
+            }
+
         }
 
         public byte[] Decrypt(byte[] data)
         {
-            var iv = new byte[16];
-            using MemoryStream msDecrypt = new MemoryStream(data);
-            msDecrypt.ReadExactly(iv, 0, 16);
-            IV = iv;
+            lock (locker)
+            {
+                var iv = new byte[16];
+                using MemoryStream msDecrypt = new MemoryStream(data);
+                msDecrypt.ReadExactly(iv, 0, 16);
 
-            using var decryptor = AES.CreateDecryptor(AES.Key, AES.IV);
-            using CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+                using var decryptor = AES.CreateDecryptor(AES.Key, iv);
+                using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
 
+                using var brDecrypt = new BinaryReader(csDecrypt);
 
-            using BinaryReader brDecrypt = new BinaryReader(csDecrypt);
-            var result = brDecrypt.ReadBytes(data.Length);
-
-            return result;
+                return brDecrypt.ReadBytes(data.Length);
+            }
         }
 
 
 
         public byte[] Crypt(byte[] data, int offset, int count)
         {
-            AES.GenerateIV();
-            using var encryptor = AES.CreateEncryptor(AES.Key, AES.IV);
+            lock (locker)
+            {
+                AES.GenerateIV();
 
-            using MemoryStream msEncrypt = new MemoryStream();
-            using CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
+                using var encryptor = AES.CreateEncryptor(AES.Key, AES.IV);
+                using var msEncrypt = new MemoryStream();
+                using var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write);
 
-            msEncrypt.Write(AES.IV);
+                msEncrypt.Write(AES.IV);
 
-            csEncrypt.Write(data, offset, count);
-            csEncrypt.FlushFinalBlock();
+                csEncrypt.Write(data, offset, count);
+                csEncrypt.FlushFinalBlock();
 
-            var output = msEncrypt.ToArray();
-            return output;
+                var output = msEncrypt.ToArray();
+                return output;
+            }
         }
 
         public byte[] Decrypt(byte[] data, int offset, int count)
         {
-            var iv = new byte[16];
-            using MemoryStream msDecrypt = new MemoryStream(data, offset, count);
-            msDecrypt.ReadExactly(iv, 0, 16);
-            IV = iv;
+            lock (locker)
+            {
+                var iv = new byte[16];
+                using MemoryStream msDecrypt = new MemoryStream(data, offset, count);
+                msDecrypt.ReadExactly(iv, 0, 16);
 
-            using var decryptor = AES.CreateDecryptor(AES.Key, AES.IV);
-            using CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+                using var decryptor = AES.CreateDecryptor(AES.Key, iv);
+                using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+                using var brDecrypt = new BinaryReader(csDecrypt);
 
+                var result = brDecrypt.ReadBytes(data.Length);
 
-            using BinaryReader brDecrypt = new BinaryReader(csDecrypt);
-            var result = brDecrypt.ReadBytes(data.Length);
-
-            return result;
+                return result;
+            }
         }
     }
 }
