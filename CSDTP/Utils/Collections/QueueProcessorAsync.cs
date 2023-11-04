@@ -63,7 +63,7 @@ namespace CSDTP.Utils.Collections
                         if (Queue.TryDequeue(out var data))
                             tasks[i] = HandleItem(data);
 
-                    await Task.WhenAll(tasks);
+                    await Task.WhenAll(tasks.Where(t=>t!=null));
                 }
                 else
                     await Task.Delay(Timeout);
