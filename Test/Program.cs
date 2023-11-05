@@ -98,13 +98,13 @@ namespace Test
             int globalCount = 1;
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            while (globalCount < 10000)
+            while (globalCount < 100000)
             {
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
 
-                var result =  requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                var result = requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
                     .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
