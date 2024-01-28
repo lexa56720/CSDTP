@@ -87,11 +87,11 @@ namespace Test
             responder.SetPacketType(typeof(ShitPacket<>));
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
-
+          
 
             using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter, crypter, protocol);
             requester.SetPacketType(typeof(ShitPacket<>));
-
+         
 
 
             int count = 0;
@@ -104,7 +104,7 @@ namespace Test
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
 
-                var result = requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+              var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
                     .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
