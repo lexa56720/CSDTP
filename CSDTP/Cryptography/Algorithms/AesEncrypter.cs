@@ -13,7 +13,7 @@ namespace CSDTP.Cryptography.Algorithms
 
         public CryptMethod CryptMethod => CryptMethod.Aes;
 
-        private bool isDisposed;
+        public bool IsDisposed { get; private set; }
 
         private object locker = new object();
         public AesEncrypter()
@@ -28,11 +28,11 @@ namespace CSDTP.Cryptography.Algorithms
         }
         public void Dispose()
         {
-            if (!isDisposed)
+            if (!IsDisposed)
             {
                 Array.Clear(Key);
             }
-            isDisposed = true;
+            IsDisposed = true;
         }
 
         public byte[] Crypt(byte[] data)

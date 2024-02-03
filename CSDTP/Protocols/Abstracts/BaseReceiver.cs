@@ -13,52 +13,47 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CSDTP.Protocols.Abstracts
 {
-    public abstract class BaseReceiver : IReceiver
+    internal abstract class BaseReceiver : IReceiver
     {
         public virtual bool IsReceiving { get; protected set; }
 
         protected CancellationTokenSource? TokenSource { get; set; }
 
 
-        private protected QueueProcessor<Tuple<byte[], IPAddress>> ReceiverQueue;
+        private protected QueueProcessor<(byte[] data, IPAddress ip)> ReceiverQueue;
 
-        private CompiledActivator Activator=new();
+        private CompiledActivator Activator = new();
 
         private GlobalByteDictionary<Type> PacketType = new();
         public IEncryptProvider? DecryptProvider { get; set; }
 
         public virtual int Port { get; }
 
-        public event EventHandler<IPacket>? DataAppear;
-
-        protected internal static ITrafficLimiter? TrafficLimiter { get; set; }
-
+        public event EventHandler<(IPAddress from, byte[] data)>? DataAppear;
         public BaseReceiver(int port)
         {
             Port = port;
-            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 10, TimeSpan.FromMilliseconds(20));
-        }
-        public BaseReceiver(int port, IEncryptProvider decryptProvider)
-        {
-            Port = port;
-            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 10, TimeSpan.FromMilliseconds(20));
-            DecryptProvider = decryptProvider;
+            ReceiverQueue = new QueueProcessor<(byte[], IPAddress)>(HandleData, 10, TimeSpan.FromMilliseconds(20));
         }
         public BaseReceiver()
         {
-            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 10, TimeSpan.FromMilliseconds(20));
+            ReceiverQueue = new QueueProcessor<(byte[], IPAddress)>(HandleData, 10, TimeSpan.FromMilliseconds(20));
         }
-        public BaseReceiver(IEncryptProvider decrypter)
+
+
+        public virtual void Dispose()
         {
-            ReceiverQueue = new QueueProcessor<Tuple<byte[], IPAddress>>(HandleData, 10, TimeSpan.FromMilliseconds(20));
-            DecryptProvider = decrypter;
+            Stop();
+            if (TokenSource != null)
+            {
+                TokenSource.Cancel();
+                TokenSource.Dispose();
+            }
         }
-
-
-        public abstract void Dispose();
 
         public virtual void Start()
         {
@@ -72,7 +67,7 @@ namespace CSDTP.Protocols.Abstracts
             var token = TokenSource.Token;
             Task.Run(async () =>
             {
-               await ReceiveWork(token);
+                await ReceiveWork(token);
             });
         }
 
@@ -87,9 +82,9 @@ namespace CSDTP.Protocols.Abstracts
             ReceiverQueue.Stop();
         }
 
-        protected virtual void OnDataAppear(IPacket packet)
+        protected virtual void OnDataAppear(byte[] bytes, IPAddress ip)
         {
-            DataAppear?.Invoke(this, packet);
+            DataAppear?.Invoke(this, (ip, bytes));
         }
 
         protected IPacket GetPacket(byte[] bytes, IPAddress source)
@@ -98,7 +93,7 @@ namespace CSDTP.Protocols.Abstracts
             {
                 using var reader = new BinaryReader(new MemoryStream(bytes));
 
-                var type = PacketType.Get(reader.ReadByteArray(), b=> Type.GetType(Compressor.Decompress(b)));
+                var type = PacketType.Get(reader.ReadByteArray(), b => Type.GetType(Compressor.Decompress(b)));
                 var packet = (IPacket)Activator.CreateInstance(type);
 
                 if (DecryptProvider != null)
@@ -117,15 +112,11 @@ namespace CSDTP.Protocols.Abstracts
             }
         }
 
-        protected bool IsAllowed(IPEndPoint ip)
-        {
-            return (TrafficLimiter == null) || (TrafficLimiter != null && TrafficLimiter.IsAllowed(ip.Address));
-        }
 
-        private void HandleData(Tuple<byte[], IPAddress> packetInfo)
+        private void HandleData((byte[] data, IPAddress ip) packetInfo)
         {
-            var packet = GetPacket(packetInfo.Item1, packetInfo.Item2);
-            OnDataAppear(packet);
+            //var packet = GetPacket(packetInfo.Item1, packetInfo.Item2);
+            OnDataAppear(packetInfo.data, packetInfo.ip);
         }
     }
 }

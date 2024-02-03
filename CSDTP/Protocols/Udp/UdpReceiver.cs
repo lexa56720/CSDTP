@@ -20,25 +20,13 @@ namespace CSDTP.Protocols.Udp
         {
             Listener = new UdpClient(port);
         }
-        public UdpReceiver(int port, IEncryptProvider encryptProvider) : base(port, encryptProvider)
-        {
-            Listener = new UdpClient(port);
-        }
-
         public UdpReceiver() : base()
         {
             Listener = new UdpClient(0);
         }
-        public UdpReceiver(IEncryptProvider encryptProvider) : base(encryptProvider)
-        {
-            Listener = new UdpClient(0);
-        }
-
         public override void Dispose()
         {
-            Stop();
-            TokenSource.Cancel();
-            TokenSource.Dispose();
+            base.Dispose();
             Listener.Dispose();
         }
 
@@ -52,8 +40,7 @@ namespace CSDTP.Protocols.Udp
                     var data = await Listener.ReceiveAsync(token);
 
                     token.ThrowIfCancellationRequested();
-                    if (IsAllowed(data.RemoteEndPoint))
-                        ReceiverQueue.Add(new Tuple<byte[], IPAddress>(data.Buffer, data.RemoteEndPoint.Address));
+                        ReceiverQueue.Add((data.Buffer, data.RemoteEndPoint.Address));
                 }
                 catch (OperationCanceledException)
                 {

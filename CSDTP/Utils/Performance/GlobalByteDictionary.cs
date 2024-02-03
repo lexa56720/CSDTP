@@ -13,7 +13,7 @@ namespace CSDTP.Utils.Performance
 
         public static ConcurrentDictionary<byte[], T> Dictionary = new ConcurrentDictionary<byte[], T>(new ByteArrayComparer());
 
-        public T Get(byte[] key, Func<byte[],T> extractor)
+        public static T Get(byte[] key, Func<byte[],T> extractor)
         {
             if(!Dictionary.TryGetValue(key, out var result))
             {

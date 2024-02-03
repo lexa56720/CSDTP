@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace CSDTP
 {
 
-    public interface ISerializable<T> 
+    public interface ISerializable<T> where T:new()
     {
         public void Serialize(BinaryWriter writer);
 

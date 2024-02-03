@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Protocols.Abstracts
 {
-    internal interface ISender : IDisposable
+    public interface ISender : IDisposable
     {
         public IPEndPoint Destination { get; }
 
@@ -19,13 +19,6 @@ namespace CSDTP.Protocols.Abstracts
         public bool IsAvailable { get; }
 
 
-        public Task<bool> Send<T>(T data, object info) where T : ISerializable<T>;
-
-        public Task<bool> Send<T, U>(T data, object info) where T : ISerializable<T> where U : Packet<T>, new();
-
-
-        public Task<bool> Send<T>(T data) where T : ISerializable<T>;
-
-        public Task<bool> Send<T,U>(T data) where T : ISerializable<T> where U: Packet<T>, new(); 
+        public Task<bool> Send(byte[] bytes);
     }
 }

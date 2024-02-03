@@ -11,8 +11,6 @@ namespace CSDTP.Packets
 {
     public interface IPacketInfo
     {
-        public CryptMethod CryptMethod { get; }
-
         public IPAddress? Source { get; set; }
 
         public object? InfoObj { get; set; }

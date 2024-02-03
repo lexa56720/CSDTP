@@ -14,7 +14,7 @@ namespace CSDTP.Cryptography.Algorithms
 
         public CryptMethod CryptMethod => CryptMethod.Rsa;
 
-        private bool isDisposed;
+        public bool IsDisposed { get; private set; }
 
         public RsaEncrypter()
         {
@@ -29,9 +29,9 @@ namespace CSDTP.Cryptography.Algorithms
 
         public void Dispose()
         {
-            if (!isDisposed)
+            if (!IsDisposed)
                 RSA.Dispose();
-            isDisposed = true;
+            IsDisposed = true;
         }
         public string PublicKey
         {

@@ -14,14 +14,12 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Packets
 {
-    public class Packet<T> : IPacket where T : ISerializable<T>
+    public class Packet<T> : IPacket where T : ISerializable<T>, new()
     {
         public bool IsHasData;
 
         public T? Data;
         public object? DataObj => Data;
-
-        public CryptMethod CryptMethod { get; private set; } = CryptMethod.None;
 
         public Type TypeOfPacket { get; private set; }
 
@@ -47,101 +45,41 @@ namespace CSDTP.Packets
             TypeOfPacket = GetType();
         }
 
-        public void Serialize(BinaryWriter writer, IEncryptProvider encryptProvider)
-        {
-            SerializePacketHeaders(writer);
-            CryptData(writer, encryptProvider);
-        }
-        public void Serialize(BinaryWriter writer)
-        {
-            SerializePacketHeaders(writer);
-            writer.Write((byte)CryptMethod.None);
-            if (IsHasData)
-                Data.Serialize(writer);
-        }
-        private void SerializePacketHeaders(BinaryWriter writer)
-        {
-            var typeBytes = Compressor.Compress(TypeOfPacket.AssemblyQualifiedName);
-            writer.WriteBytes(typeBytes);
 
-            SerializeCustomData(writer);
+        public void SerializePacket(BinaryWriter writer)
+        {
             writer.Write(ReplyPort);
             writer.Write(SendTime.ToBinary());
             writer.Write(IsHasData);
-        }
-        protected virtual void SerializeCustomData(BinaryWriter writer)
-        {
 
+            Data?.Serialize(writer);
         }
-        private void CryptData(BinaryWriter writer, IEncryptProvider encryptProvider)
+        public virtual void SerializeUnprotectedCustomData(BinaryWriter writer)
         {
-            var crypter = encryptProvider.GetEncrypter(this);
-            if (IsHasData)
-                if (crypter != null)
-                {
-                    writer.Write((byte)crypter.CryptMethod);
-                    using var ms = new MemoryStream();
-                    using var cryptWriter = new BinaryWriter(ms);
-                    Data.Serialize(cryptWriter);
-                    writer.Write(crypter.Crypt(ms.ToArray()));
-                }
-                else
-                {
-                    writer.Write((byte)CryptMethod.None);
-                    Data.Serialize(writer);
-                }
+            return;
+        }
+        public virtual void SerializeProtectedCustomData(BinaryWriter writer)
+        {
+            return;
         }
 
 
-        public IPacket Deserialize(BinaryReader reader, IEncryptProvider encryptProvider)
+        public void DeserializePacket(BinaryReader reader)
         {
-            DeserializePacketHeaders(reader);
-
-
-            if (IsHasData && CryptMethod != CryptMethod.None)
-                Data = DecryptData(reader, encryptProvider);
-            else
-                Data = T.Deserialize(reader);
-
-            return this;
-        }
-        public IPacket Deserialize(BinaryReader reader)
-        {
-            DeserializePacketHeaders(reader);
-
-            Data = T.Deserialize(reader);
-
-            return this;
-        }
-        private void DeserializePacketHeaders(BinaryReader reader)
-        {
-            DeserializeCustomData(reader);
             ReplyPort = reader.ReadInt32();
             SendTime = DateTime.FromBinary(reader.ReadInt64());
             IsHasData = reader.ReadBoolean();
-            CryptMethod = (CryptMethod)reader.ReadByte();
+
+            if (IsHasData)
+                T.Deserialize(reader);
         }
-        protected virtual void DeserializeCustomData(BinaryReader reader)
+        public virtual void DeserializeUnprotectedCustomData(BinaryReader writer)
         {
-
+            return;
         }
-        private T? DecryptData(BinaryReader reader, IEncryptProvider encryptProvider)
+        public virtual void DeserializeProtectedCustomData(BinaryReader writer)
         {
-            var crypter = encryptProvider.GetDecrypter(this);
-            if (crypter == null)
-                return default;
-
-            var ms = (MemoryStream)reader.BaseStream;
-
-            var bytes = ms.ToArray();
-
-            var decrypted = crypter.Decrypt(bytes, (int)ms.Position, (int)(ms.Length - ms.Position));
-            encryptProvider.DisposeEncryptor(crypter);
-
-            using var decryptedMS = new MemoryStream(decrypted);
-            using var br = new BinaryReader(decryptedMS);
-            return T.Deserialize(br);
+            return;
         }
-
     }
 }

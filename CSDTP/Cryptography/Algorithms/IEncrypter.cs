@@ -14,6 +14,10 @@ namespace CSDTP.Cryptography.Algorithms
     }
     public interface IEncrypter : IDisposable
     {
+        public CryptMethod CryptMethod { get; }
+
+        public bool IsDisposed { get; }
+
         public byte[] Crypt(byte[] data);
 
         public byte[] Decrypt(byte[] data);
@@ -22,6 +26,5 @@ namespace CSDTP.Cryptography.Algorithms
 
         public byte[] Decrypt(byte[] data, int offset, int count);
 
-        public CryptMethod CryptMethod { get; }
     }
 }

@@ -10,13 +10,12 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Protocols.Abstracts
 {
-    public abstract class BaseSender : ISender
+    internal abstract class BaseSender 
     {
         public IPEndPoint Destination { get; }
         public int ReplyPort { get; }
 
         public bool IsAvailable { get; protected set; } = true;
-        public IEncryptProvider? EncryptProvider { get; set; }
 
         public BaseSender(IPEndPoint destination)
         {
@@ -30,19 +29,6 @@ namespace CSDTP.Protocols.Abstracts
             ReplyPort = replyPort;
         }
 
-        public BaseSender(IPEndPoint destination, IEncryptProvider encryptProvider)
-        {
-            Destination = destination;
-            EncryptProvider = encryptProvider;
-            ReplyPort = 0;
-        }
-
-        public BaseSender(IPEndPoint destination, IEncryptProvider encryptProvider, int replyPort = -1)
-        {
-            Destination = destination;
-            EncryptProvider = encryptProvider;
-            ReplyPort = replyPort;
-        }
 
         public abstract void Dispose();
 

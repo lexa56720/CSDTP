@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,24 +30,6 @@ namespace CSDTP.Protocols.Http
             Listener.Prefixes.Add($"http://+:{port}/");
         }
 
-        public HttpReceiver(IEncryptProvider decrypter) : base(decrypter)
-        {
-            Listener = new HttpListener();
-            Listener.Prefixes.Add($"http://+:{Utils.PortUtils.GetFreePort()}/");
-        }
-
-        public HttpReceiver(int port, IEncryptProvider decryptProvider) : base(port, decryptProvider)
-        {
-            Listener = new HttpListener();
-            Listener.Prefixes.Add($"http://+:{port}/");
-        }
-
-        public override void Dispose()
-        {
-            Stop();
-            TokenSource.Cancel();
-            TokenSource.Dispose();
-        }
         public override void Stop()
         {
             base.Stop();
@@ -70,15 +53,13 @@ namespace CSDTP.Protocols.Http
                     var data = await Listener.GetContextAsync();
 
                     token.ThrowIfCancellationRequested();
-                    if (IsAllowed(data.Request.RemoteEndPoint))
+                //    if (IsAllowed(data.Request.RemoteEndPoint))
                     {
                         using Stream output = data.Response.OutputStream;
                         await output.FlushAsync(token);
                         token.ThrowIfCancellationRequested();
 
-                        ReceiverQueue.Add(new Tuple<byte[], IPAddress>(
-                            await ReadBytes(data, token),
-                            data.Request.RemoteEndPoint.Address));
+                        ReceiverQueue.Add((await ReadBytes(data, token), data.Request.RemoteEndPoint.Address));
                     }
 
                 }
@@ -89,7 +70,7 @@ namespace CSDTP.Protocols.Http
 
             }
             Listener.Stop();
-            Listener.Close();
+            Listener.Close();          
             ReceiverQueue.Clear();
         }
 
@@ -101,7 +82,7 @@ namespace CSDTP.Protocols.Http
             return bytes;
         }
 
-
+        [SupportedOSPlatform("windows")]
         private void ModifyHttpSettings(int port,bool isAdd)
         {
             string everyone = new System.Security.Principal.SecurityIdentifier("S-1-1-0")

@@ -3,14 +3,15 @@ using CSDTP.Packets;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CSDTP.Protocols.Abstracts
 {
-    internal interface IReceiver : IDisposable
+    public interface IReceiver : IDisposable
     {
-        public event EventHandler<IPacket> DataAppear;
+        public event EventHandler<(IPAddress from, byte[] data)> DataAppear;
         public IEncryptProvider? DecryptProvider { get;  set; }
         public bool IsReceiving { get; }
         public int Port { get; }

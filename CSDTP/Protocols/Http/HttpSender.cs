@@ -16,26 +16,18 @@ namespace CSDTP.Protocols.Http
         private CancellationTokenSource CancellationToken { get; set; } = new CancellationTokenSource();
         public HttpSender(IPEndPoint destination) : base(destination)
         {
-            HttpClient = new HttpClient();
-            HttpClient.BaseAddress = new UriBuilder(destination.ToString()).Uri;
+            HttpClient = new HttpClient
+            {
+                BaseAddress = new UriBuilder(destination.ToString()).Uri
+            };
         }
 
         public HttpSender(IPEndPoint destination, int replyPort = -1) : base(destination, replyPort)
         {
-            HttpClient = new HttpClient();
-            HttpClient.BaseAddress = new UriBuilder(destination.ToString()).Uri;
-        }
-
-        public HttpSender(IPEndPoint destination, IEncryptProvider encryptProvider) : base(destination, encryptProvider)
-        {
-            HttpClient = new HttpClient();
-            HttpClient.BaseAddress = new UriBuilder(destination.ToString()).Uri;
-        }
-
-        public HttpSender(IPEndPoint destination, IEncryptProvider encryptProvider, int replyPort = -1) : base(destination, encryptProvider, replyPort)
-        {
-            HttpClient = new HttpClient();
-            HttpClient.BaseAddress = new UriBuilder(destination.ToString()).Uri;
+            HttpClient = new HttpClient
+            {
+                BaseAddress = new UriBuilder(destination.ToString()).Uri
+            };
         }
 
 

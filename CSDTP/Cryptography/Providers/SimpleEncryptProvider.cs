@@ -19,17 +19,17 @@ namespace CSDTP.Cryptography.Providers
         private bool isDisposed;
         public void Dispose()
         {
-            if (!isDisposed)
+            if (!isDisposed && !Encrypter.IsDisposed)
                 Encrypter.Dispose();
             isDisposed = true;
         }
 
-        public void DisposeEncryptor(IEncrypter encryptor)
+        public void DisposeEncrypter(IEncrypter encryptor)
         {
             return;
         }
 
-        public IEncrypter? GetDecrypter(IPacketInfo packet)
+        public IEncrypter? GetDecrypter(ReadOnlySpan<byte> bytes)
         {
             return Encrypter;
         }

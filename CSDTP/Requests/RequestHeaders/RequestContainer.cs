@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Requests.RequestHeaders
 {
-    internal class RequestContainer<T> : IRequestContainer, ISerializable<RequestContainer<T>> where T : ISerializable<T>
+    internal class RequestContainer<T> : IRequestContainer, ISerializable<RequestContainer<T>> where T : ISerializable<T>,new()
     {
         public Guid Id { get; set; }
 
@@ -32,8 +32,6 @@ namespace CSDTP.Requests.RequestHeaders
             }
         }
 
-        private static GlobalByteDictionary<Type> TypeDictionary = new();
-
         public RequestContainer(T data, RequestType type)
         {
             Data = data;
@@ -48,15 +46,16 @@ namespace CSDTP.Requests.RequestHeaders
             RequestType = type;
             DataType = typeof(T);
         }
-
         public RequestContainer() { }
+
         public static RequestContainer<T> Deserialize(BinaryReader reader)
         {
             var id = new Guid(reader.ReadBytes(16));
             var requestType = (RequestType)reader.ReadByte();
             if (requestType == RequestType.Post)
             {
-                var resposeObjType = TypeDictionary.Get(reader.ReadByteArray(), b => Type.GetType(Compressor.Decompress(b)));
+                var resposeObjType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(), 
+                                                                    b => Type.GetType(Compressor.Decompress(b)));
                 return new RequestContainer<T>(T.Deserialize(reader), id, requestType)
                 {
                     ResponseObjType=resposeObjType

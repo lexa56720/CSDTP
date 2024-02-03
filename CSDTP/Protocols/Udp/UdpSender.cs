@@ -11,7 +11,7 @@ using CSDTP.Utils;
 
 namespace CSDTP.Protocols.Udp
 {
-    public class UdpSender : BaseSender
+    internal class UdpSender : BaseSender
     {
         public UdpSender(IPEndPoint destination, int replyPort) : base(destination, replyPort)
         {
@@ -20,18 +20,10 @@ namespace CSDTP.Protocols.Udp
         public UdpSender(IPEndPoint destination) : base(destination)
         {
         }
-        public UdpSender(IPEndPoint destination,IEncryptProvider encryptProvider, int replyPort) : base(destination, encryptProvider, replyPort)
-        {
-        }
-
-        public UdpSender(IPEndPoint destination, IEncryptProvider encryptProvider) : base(destination, encryptProvider)
-        {
-        }
         public override void Dispose()
         {
             IsAvailable = false;
         }
-
 
         protected override async Task<bool> SendBytes(byte[] bytes)
         {

@@ -17,12 +17,14 @@ namespace CSDTP.Packets
         public object? DataObj { get; }
 
 
-        public void Serialize(BinaryWriter writer);
+        public void SerializePacket(BinaryWriter writer);
+        public void SerializeUnprotectedCustomData(BinaryWriter writer);
+        public void SerializeProtectedCustomData(BinaryWriter writer);
 
-        public void Serialize(BinaryWriter writer, IEncryptProvider encryptProvider);
 
-        public IPacket Deserialize(BinaryReader reader, IEncryptProvider encryptProvider);
-        public IPacket Deserialize(BinaryReader reader);
+        public void DeserializePacket(BinaryReader reader);
+        public void DeserializeUnprotectedCustomData(BinaryReader writer);
+        public void DeserializeProtectedCustomData(BinaryReader writer);
 
     }
 }
