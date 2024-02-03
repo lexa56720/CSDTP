@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Protocols.Abstracts
 {
-    internal abstract class BaseSender 
+    internal abstract class BaseSender :ISender
     {
         public IPEndPoint Destination { get; }
         public int ReplyPort { get; }
@@ -118,5 +118,7 @@ namespace CSDTP.Protocols.Abstracts
                 InfoObj=info
             };
         }
+
+        public abstract Task<bool> Send(byte[] bytes);
     }
 }

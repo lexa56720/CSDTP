@@ -15,7 +15,10 @@ namespace Test
             Text = text;
         }
 
-
+        public Message()
+        {
+            Text = "";
+        }
 
         public static Message Deserialize(BinaryReader reader)
         {

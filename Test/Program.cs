@@ -39,10 +39,12 @@ namespace Test
         public static Protocol protocol = Protocol.Udp;
         static async Task Main(string[] args)
         {
+            var rp = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, 666), 667, Protocol.Udp);
+            await rp.SendRequestAsync<Message, Message>(new Message("HI"), TimeSpan.FromSeconds(5));
             //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
 
 
-           // await TestGet();
+            // await TestGet();
             await TestPost();
             Console.ReadLine();
 
@@ -87,11 +89,11 @@ namespace Test
             responder.SetPacketType(typeof(ShitPacket<>));
             responder.RegisterPostHandler<Message, Message>(Modify);
             responder.Start();
-          
+
 
             using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter, crypter, protocol);
             requester.SetPacketType(typeof(ShitPacket<>));
-         
+
 
 
             int count = 0;
@@ -104,13 +106,13 @@ namespace Test
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
 
-              var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
-                    .ContinueWith(e => Interlocked.Increment(ref count));
+                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                      .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
                 //if (stopwatch.ElapsedMilliseconds > globalCount*1000)
                 {
-                   
+
                     Console.Clear();
                     Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds + " " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
                     //count =0;
@@ -124,12 +126,12 @@ namespace Test
         static int counter = 0;
         static Message Modify(Message msg, IPacketInfo info)
         {
-            
+
             return new Message(msg.Text + " " + Interlocked.Increment(ref counter));
         }
         static void ModifyGet(Message msg, IPacketInfo info)
         {
-            
+
         }
 
     }

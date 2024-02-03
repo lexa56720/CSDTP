@@ -22,11 +22,11 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Requests
 {
-    internal class RequesterPipeline : IDisposable
+    public class RequesterPipeline : IDisposable
     {
-        public ISender Sender { get; init; }
-        public IReceiver Receiver { get; init; }
-        public IEncryptProvider? EncryptProvider { get; init; }
+        public ISender Sender { private get; init; }
+        public IReceiver Receiver { private get; init; }
+        public IEncryptProvider? EncryptProvider { private get; init; }
 
         public int ReplyPort => Receiver.Port;
 
@@ -117,9 +117,9 @@ namespace CSDTP.Requests
             var responsePacket = await RequestManager.GetResponseAsync(container, timeout);
 
             if (responsePacket == null)
-                  return default;
+                return default;
 
-            return (TResponse)((IRequestContainer)responsePacket.DataObj).DataObj;   
+            return (TResponse)((IRequestContainer)responsePacket.DataObj).DataObj;
         }
 
         private (byte[] bytes, int posToCrypt) GetBytes(IPacket packet)

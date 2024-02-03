@@ -13,8 +13,6 @@ namespace CSDTP.Protocols.Abstracts
     {
         public IPEndPoint Destination { get; }
 
-        public IEncryptProvider? EncryptProvider { get; set; }
-
         public int ReplyPort { get; }
         public bool IsAvailable { get; }
 
