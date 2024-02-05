@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Requests.RequestHeaders
 {
-    public enum RequestType
+    public enum RequesKind
     {
-        Post,
-        Get,
+        Request,
+        Data,
         Response,
     }
     public interface IRequestContainer
@@ -22,7 +22,7 @@ namespace CSDTP.Requests.RequestHeaders
 
         public Type? ResponseObjType { get; set; }
 
-        public RequestType RequestType { get; set; }
+        public RequesKind RequestKind { get; set; }
 
     }
 }

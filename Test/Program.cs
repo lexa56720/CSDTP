@@ -11,7 +11,7 @@ using System.Net;
 
 namespace Test
 {
-    public class ShitPacket<T> : Packet<T> where T : ISerializable<T>
+    public class ShitPacket<T> : Packet<T> where T : ISerializable<T>,new()
     {
         public ShitPacket()
         {
@@ -23,12 +23,12 @@ namespace Test
 
         public int Shit { get; set; } = 10;
 
-        protected override void DeserializeCustomData(BinaryReader reader)
+        public override void DeserializeUnprotectedCustomData(BinaryReader reader)
         {
             Shit = reader.ReadInt32();
         }
 
-        protected override void SerializeCustomData(BinaryWriter writer)
+        public override void SerializeUnprotectedCustomData(BinaryWriter writer)
         {
             writer.Write(Shit);
         }
@@ -39,8 +39,8 @@ namespace Test
         public static Protocol protocol = Protocol.Udp;
         static async Task Main(string[] args)
         {
-            var rp = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, 666), 667, Protocol.Udp);
-            await rp.SendRequestAsync<Message, Message>(new Message("HI"), TimeSpan.FromSeconds(5));
+           // var rp = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, 666), 667, Protocol.Udp);
+            //await rp.SendRequestAsync<Message, Message>(new Message("HI"), TimeSpan.FromSeconds(5));
             //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
 
 
@@ -51,29 +51,29 @@ namespace Test
         }
         public static async Task TestGet()
         {
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666), 7777, protocol);
-            using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666, protocol);
-            responder.RegisterGetHandler<Message>(ModifyGet);
-            responder.Start();
+            //using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, 6666), 7777, protocol);
+            //using var responder = new Responder(TimeSpan.FromSeconds(-10), 6666, protocol);
+            //responder.RegisterGetHandler<Message>(ModifyGet);
+            //responder.Start();
 
-            int count = 0;
-            int globalCount = 0;
-            Stopwatch stopwatch = Stopwatch.StartNew();
+            //int count = 0;
+            //int globalCount = 0;
+            //Stopwatch stopwatch = Stopwatch.StartNew();
 
-            while (globalCount < 5)
-            {
-                var result = await requester.GetAsync(new Message("fff " + count++));
+            //while (globalCount < 5)
+            //{
+            //    var result = await requester.GetAsync(new Message("fff " + count++));
 
-                if (stopwatch.ElapsedMilliseconds > 1000)
-                {
-                    Console.Clear();
-                    Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds);
-                    count = 0;
-                    globalCount++;
-                    stopwatch.Restart();
-                }
+            //    if (stopwatch.ElapsedMilliseconds > 1000)
+            //    {
+            //        Console.Clear();
+            //        Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds);
+            //        count = 0;
+            //        globalCount++;
+            //        stopwatch.Restart();
+            //    }
 
-            }
+            //}
         }
 
         public static async Task TestPost()
@@ -85,15 +85,12 @@ namespace Test
             //var port = PortUtils.GetFreePort() ;
             var port = 250;
 
-            using var responder = new Responder(TimeSpan.FromSeconds(10), port, crypter, crypter, protocol);
-            responder.SetPacketType(typeof(ShitPacket<>));
-            responder.RegisterPostHandler<Message, Message>(Modify);
+            using var responder = new UdpResponderPipeline(crypter, typeof(ShitPacket<>));
+            responder.RegisterRequestHandler<Message, Message>(Modify);
             responder.Start();
 
 
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, port), crypter, crypter, protocol);
-            requester.SetPacketType(typeof(ShitPacket<>));
-
+            using var requester = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, responder.Port), port, Protocol.Udp, crypter, typeof(ShitPacket<>));
 
 
             int count = 0;
@@ -106,8 +103,8 @@ namespace Test
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
 
-                var result = await requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
-                      .ContinueWith(e => Interlocked.Increment(ref count));
+                var result =  requester.SendRequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                                                                               .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
                 //if (stopwatch.ElapsedMilliseconds > globalCount*1000)

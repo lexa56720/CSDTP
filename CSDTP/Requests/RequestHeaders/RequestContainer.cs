@@ -14,7 +14,7 @@ namespace CSDTP.Requests.RequestHeaders
 
         public T Data { get; private set; }
 
-        public RequestType RequestType { get; set; }
+        public RequesKind RequestKind { get; set; }
 
         public Type DataType { get; set; }
 
@@ -32,18 +32,18 @@ namespace CSDTP.Requests.RequestHeaders
             }
         }
 
-        public RequestContainer(T data, RequestType type)
+        public RequestContainer(T data, RequesKind type)
         {
             Data = data;
             Id = Guid.NewGuid();
-            RequestType = type;
+            RequestKind = type;
             DataType = typeof(T);
         }
-        public RequestContainer(T data, Guid id, RequestType type)
+        public RequestContainer(T data, Guid id, RequesKind type)
         {
             Data = data;
             Id = id;
-            RequestType = type;
+            RequestKind = type;
             DataType = typeof(T);
         }
         public RequestContainer() { }
@@ -51,8 +51,8 @@ namespace CSDTP.Requests.RequestHeaders
         public static RequestContainer<T> Deserialize(BinaryReader reader)
         {
             var id = new Guid(reader.ReadBytes(16));
-            var requestType = (RequestType)reader.ReadByte();
-            if (requestType == RequestType.Post)
+            var requestType = (RequesKind)reader.ReadByte();
+            if (requestType == RequesKind.Request)
             {
                 var resposeObjType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(), 
                                                                     b => Type.GetType(Compressor.Decompress(b)));
@@ -67,8 +67,8 @@ namespace CSDTP.Requests.RequestHeaders
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Id.ToByteArray());
-            writer.Write((byte)RequestType);
-            if (RequestType == RequestType.Post)
+            writer.Write((byte)RequestKind);
+            if (RequestKind == RequesKind.Request)
                 writer.WriteBytes(Compressor.Compress(ResponseObjType.AssemblyQualifiedName));
             Data.Serialize(writer);
         }

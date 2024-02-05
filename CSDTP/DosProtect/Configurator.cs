@@ -11,7 +11,7 @@ namespace CSDTP.DosProtect
     {
         public static void SetTrafficLimiter(ITrafficLimiter limiter)
         {
-            BaseReceiver.TrafficLimiter = limiter;
+           // BaseReceiver.TrafficLimiter = limiter;
         }
     }
 }

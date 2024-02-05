@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,19 +26,17 @@ namespace CSDTP.Requests
 
         public RequestManager(Type customPacketType)
         {
-            CustomPacketType = customPacketType;
-            CreateCustomPacket = new CompiledMethod(GetType()
-                .GetMethods()
-                .First(m => m.Name == nameof(GetPacket) &&
-                            m.GetGenericArguments().Length == 2 &&
-                            m.GetParameters().Length == 2));
+            if (!SetPacketType(customPacketType))
+                throw new Exception("WRONG CUSTOM PACKET TYPE");
+
+            CreateCustomPacket = new CompiledMethod(typeof(RequestManager).GetMethod(nameof(GetPacket), BindingFlags.NonPublic | BindingFlags.Instance));
         }
         public RequestManager()
         {
 
         }
 
-        public bool SetPacketType(Type type)
+        private bool SetPacketType(Type type)
         {
             if (!type.GetConstructors().Any(c => c.GetParameters().Length == 0))
                 return false;
@@ -58,7 +57,7 @@ namespace CSDTP.Requests
                                        where TData : ISerializable<TData>, new()
                                        where TResponse : ISerializable<TResponse>, new()
         {
-            return new RequestContainer<TData>(data, RequestType.Post)
+            return new RequestContainer<TData>(data, RequesKind.Request)
             {
                 ResponseObjType = typeof(TResponse)
             };
@@ -67,14 +66,17 @@ namespace CSDTP.Requests
         public RequestContainer<TData> PackToContainer<TData>(TData data)
                                      where TData : ISerializable<TData>, new()
         {
-            return new RequestContainer<TData>(data, RequestType.Get);
+            return new RequestContainer<TData>(data, RequesKind.Data);
         }
         public IPacket PackToPacket<TData>(RequestContainer<TData> data, int replyPort)
                        where TData : ISerializable<TData>, new()
         {
             if (CustomPacketType != null)
             {
-                return (IPacket)CreateCustomPacket.Invoke(this, typeof(TData), CustomPacketType, data, replyPort);
+                return (IPacket)CreateCustomPacket.Invoke(this, 
+                        [typeof(TData), CustomPacketType.MakeGenericType(typeof(RequestContainer<TData>))], 
+                        data, 
+                        replyPort);
             }
             return GetPacket<TData, Packet<RequestContainer<TData>>>(data, replyPort);
         }

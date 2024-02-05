@@ -25,16 +25,5 @@ namespace CSDTP.Protocols
             }
             throw new NotImplementedException("PROTOCOL NOT IMPLEMENTED");
         }
-        public static ISender CreateSender(IPEndPoint destination, int replyPort, Protocol protocol)
-        {
-            switch (protocol)
-            {
-                case Protocol.Udp:
-                    return new UdpSender(destination, replyPort);
-                case Protocol.Http:
-                    return new HttpSender(destination, replyPort);
-            }
-            throw new NotImplementedException("PROTOCOL NOT IMPLEMENTED");
-        }
     }
 }

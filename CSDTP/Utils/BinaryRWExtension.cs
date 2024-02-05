@@ -50,13 +50,13 @@ namespace CSDTP.Utils
             return array;
         }
 
-        public static void Write<T>(this BinaryWriter writer, T[] array) where T : ISerializable<T>
+        public static void Write<T>(this BinaryWriter writer, T[] array) where T : ISerializable<T>,new()
         {
             writer.Write(array.Length);
             for (int i = 0; i < array.Length; i++)
                 array[i].Serialize(writer);
         }
-        public static T[] Read<T>(this BinaryReader reader) where T:ISerializable<T>
+        public static T[] Read<T>(this BinaryReader reader) where T:ISerializable<T>, new()
         {
             var length = reader.ReadInt32();
             var array = new T[length];

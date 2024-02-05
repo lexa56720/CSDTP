@@ -22,15 +22,6 @@ namespace CSDTP.Protocols.Http
             };
         }
 
-        public HttpSender(IPEndPoint destination, int replyPort = -1) : base(destination, replyPort)
-        {
-            HttpClient = new HttpClient
-            {
-                BaseAddress = new UriBuilder(destination.ToString()).Uri
-            };
-        }
-
-
         public override void Dispose()
         {
             CancellationToken.Cancel();
@@ -39,14 +30,14 @@ namespace CSDTP.Protocols.Http
             IsAvailable = false;
         }
 
-        protected override async Task<bool> SendBytes(byte[] bytes)
+        public override async Task<bool> SendBytes(byte[] bytes)
         {
             if (!IsAvailable)
                 return false;
             var response = await HttpClient.SendAsync(new HttpRequestMessage()
             {
                 Content = new ByteArrayContent(bytes),
-                Method = HttpMethod.Get
+                Method = HttpMethod.Get,
             }, CancellationToken.Token);
             return response.IsSuccessStatusCode;
         }

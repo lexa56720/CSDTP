@@ -39,7 +39,7 @@ namespace CSDTP.Protocols.Http
         public override void Start()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                ModifyHttpSettings(Port,true);
+                ModifyHttpSettings(Port, true);
             Listener.Start();
             base.Start();
         }
@@ -53,15 +53,11 @@ namespace CSDTP.Protocols.Http
                     var data = await Listener.GetContextAsync();
 
                     token.ThrowIfCancellationRequested();
-                //    if (IsAllowed(data.Request.RemoteEndPoint))
-                    {
-                        using Stream output = data.Response.OutputStream;
-                        await output.FlushAsync(token);
-                        token.ThrowIfCancellationRequested();
+                    using Stream output = data.Response.OutputStream;
+                    await output.FlushAsync(token);
+                    token.ThrowIfCancellationRequested();
 
-                        ReceiverQueue.Add((await ReadBytes(data, token), data.Request.RemoteEndPoint.Address));
-                    }
-
+                    ReceiverQueue.Add((await ReadBytes(data, token), data.Request.RemoteEndPoint.Address));
                 }
                 catch (OperationCanceledException)
                 {
@@ -70,7 +66,7 @@ namespace CSDTP.Protocols.Http
 
             }
             Listener.Stop();
-            Listener.Close();          
+            Listener.Close();
             ReceiverQueue.Clear();
         }
 
@@ -83,22 +79,24 @@ namespace CSDTP.Protocols.Http
         }
 
         [SupportedOSPlatform("windows")]
-        private void ModifyHttpSettings(int port,bool isAdd)
+        private void ModifyHttpSettings(int port, bool isAdd)
         {
             string everyone = new System.Security.Principal.SecurityIdentifier("S-1-1-0")
-                .Translate(typeof(System.Security.Principal.NTAccount)).ToString();
-            var command = isAdd? "add" : "delete";
+                                 .Translate(typeof(System.Security.Principal.NTAccount))
+                                 .ToString();
+            var command = isAdd ? "add" : "delete";
             string parameter = $"http {command} urlacl url=http://+:{port}/ user=\\{everyone}";
 
-            ProcessStartInfo psi = new ProcessStartInfo("netsh", parameter);
-
-            psi.Verb = "runas";
-            psi.RedirectStandardOutput = false;
-            psi.CreateNoWindow = true;
-            psi.WindowStyle = ProcessWindowStyle.Hidden;
-            psi.UseShellExecute = true;
-            var proc = Process.Start(psi);
-            proc.WaitForExit();
+            var procInfo = new ProcessStartInfo("netsh", parameter)
+            {
+                Verb = "runas",
+                RedirectStandardOutput = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                UseShellExecute = true
+            };
+            var proc = Process.Start(procInfo);
+            proc.WaitForExitAsync();
         }
         private int GetPortFromUrl(string url)
         {

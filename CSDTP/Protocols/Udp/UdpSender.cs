@@ -11,12 +11,9 @@ using CSDTP.Utils;
 
 namespace CSDTP.Protocols.Udp
 {
+
     internal class UdpSender : BaseSender
     {
-        public UdpSender(IPEndPoint destination, int replyPort) : base(destination, replyPort)
-        {
-        }
-
         public UdpSender(IPEndPoint destination) : base(destination)
         {
         }
@@ -25,7 +22,7 @@ namespace CSDTP.Protocols.Udp
             IsAvailable = false;
         }
 
-        protected override async Task<bool> SendBytes(byte[] bytes)
+        public override async Task<bool> SendBytes(byte[] bytes)
         {
             using var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
             client.Connect(Destination);

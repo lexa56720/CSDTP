@@ -12,11 +12,7 @@ namespace CSDTP.Protocols.Abstracts
     public interface ISender : IDisposable
     {
         public IPEndPoint Destination { get; }
-
-        public int ReplyPort { get; }
         public bool IsAvailable { get; }
-
-
-        public Task<bool> Send(byte[] bytes);
+        public Task<bool> SendBytes(byte[] bytes);
     }
 }

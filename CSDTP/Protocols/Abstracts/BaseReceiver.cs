@@ -87,35 +87,8 @@ namespace CSDTP.Protocols.Abstracts
             DataAppear?.Invoke(this, (ip, bytes));
         }
 
-        protected IPacket GetPacket(byte[] bytes, IPAddress source)
-        {
-            try
-            {
-                using var reader = new BinaryReader(new MemoryStream(bytes));
-
-                var type = PacketType.Get(reader.ReadByteArray(), b => Type.GetType(Compressor.Decompress(b)));
-                var packet = (IPacket)Activator.CreateInstance(type);
-
-                if (DecryptProvider != null)
-                    packet.Deserialize(reader, DecryptProvider);
-                else
-                    packet.Deserialize(reader);
-
-                packet.ReceiveTime = DateTime.Now;
-
-                packet.Source = source;
-                return packet;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("PACKET DESERIALIZATION ERROR", ex);
-            }
-        }
-
-
         private void HandleData((byte[] data, IPAddress ip) packetInfo)
         {
-            //var packet = GetPacket(packetInfo.Item1, packetInfo.Item2);
             OnDataAppear(packetInfo.data, packetInfo.ip);
         }
     }

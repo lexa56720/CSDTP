@@ -24,34 +24,31 @@ namespace CSDTP.Requests
 {
     public class RequesterPipeline : IDisposable
     {
-        public ISender Sender { private get; init; }
-        public IReceiver Receiver { private get; init; }
-        public IEncryptProvider? EncryptProvider { private get; init; }
-
         public int ReplyPort => Receiver.Port;
 
+        private ISender Sender;
+        private IReceiver Receiver;
 
         private RequestManager RequestManager = null!;
-
-        private CompiledActivator PacketActivator = new CompiledActivator();
-
+        private PacketManager PacketManager = null!;
 
         private bool isDisposed;
 
-        public RequesterPipeline(ISender sender, IReceiver receiver, Type? customPacketType = null)
+        public RequesterPipeline(ISender sender, IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
             Sender = sender;
             Receiver = receiver;
-            Initialize(customPacketType);
+            Initialize(customPacketType, encryptProvider);
         }
-        public RequesterPipeline(IPEndPoint destination, int replyPort, Protocol protocol, Type? customPacketType = null)
+        public RequesterPipeline(IPEndPoint destination, int replyPort, Protocol protocol, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
-            Sender = SenderFactory.CreateSender(destination, replyPort, protocol);
+            Sender = SenderFactory.CreateSender(destination, protocol);
             Receiver = ReceiverFactory.CreateReceiver(replyPort, protocol);
-            Initialize(customPacketType);
+            Initialize(customPacketType, encryptProvider);
         }
-        private void Initialize(Type? customPacketType)
+        private void Initialize(Type? customPacketType, IEncryptProvider? encryptProvider)
         {
+            PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
             Receiver.DataAppear += ResponseAppear;
             Receiver.Start();
             if (customPacketType != null)
@@ -59,6 +56,13 @@ namespace CSDTP.Requests
             else
                 RequestManager = new RequestManager();
         }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
         protected virtual void Dispose(bool disposing)
         {
             if (!isDisposed)
@@ -68,130 +72,59 @@ namespace CSDTP.Requests
                     Sender.Dispose();
                     Receiver.DataAppear -= ResponseAppear;
                     Receiver.Dispose();
-                    EncryptProvider?.Dispose();
+                    PacketManager?.Dispose();
                 }
                 isDisposed = true;
             }
         }
-        public void Dispose()
-        {
-            Dispose(disposing: true);
-            GC.SuppressFinalize(this);
-        }
-
 
         private void ResponseAppear(object? sender, (IPAddress from, byte[] data) e)
         {
-            var decryptedData = DecryptBytes(e.data);
-            var packet = GetResponsePacket(decryptedData);
+            var decryptedData = PacketManager.DecryptBytes(e.data);
+            var packet = PacketManager.GetResponsePacket(decryptedData);
+            packet.ReceiveTime = DateTime.Now;
+            packet.Source = e.from;
+
             if (packet.DataObj is IRequestContainer container)
                 RequestManager.ResponseAppear(container, packet);
         }
 
-        public async Task<bool> SendAsync<TData>(TData data) where TData : ISerializable<TData>, new()
+        public async Task<bool> SendAsync<TData>(TData data)
+                                where TData : ISerializable<TData>, new()
         {
             var container = RequestManager.PackToContainer(data);
+            container.RequestKind = RequesKind.Data;
             var packet = RequestManager.PackToPacket(container, -1);
 
-            var packetBytes = GetBytes(packet);
+            var packetBytes = PacketManager.GetBytes(packet);
 
-            var cryptedPacketBytes = EncryptBytes(packet, packetBytes.bytes, packetBytes.posToCrypt);
+            var cryptedPacketBytes = PacketManager.EncryptBytes(packet, packetBytes.bytes, packetBytes.posToCrypt);
 
-            return await Sender.Send(cryptedPacketBytes);
+            return await Sender.SendBytes(cryptedPacketBytes);
         }
         public async Task<TResponse?> SendRequestAsync<TResponse, TRequest>(TRequest data, TimeSpan timeout)
                                       where TRequest : ISerializable<TRequest>, new()
                                       where TResponse : ISerializable<TResponse>, new()
         {
             var container = RequestManager.PackToContainer<TResponse, TRequest>(data);
+            container.RequestKind = RequesKind.Request;
+            container.ResponseObjType = typeof(TResponse);
             var packet = RequestManager.PackToPacket(container, ReplyPort);
 
-            var packetBytes = GetBytes(packet);
+            var packetBytes = PacketManager.GetBytes(packet);
 
-            var cryptedPacketBytes = EncryptBytes(packet, packetBytes.bytes, packetBytes.posToCrypt);
+            var cryptedPacketBytes = PacketManager.EncryptBytes(packet, packetBytes.bytes, packetBytes.posToCrypt);
 
             if (!RequestManager.AddRequest(container))
                 return default;
 
-            await Sender.Send(cryptedPacketBytes);
+            await Sender.SendBytes(cryptedPacketBytes);
             var responsePacket = await RequestManager.GetResponseAsync(container, timeout);
 
             if (responsePacket == null)
                 return default;
 
             return (TResponse)((IRequestContainer)responsePacket.DataObj).DataObj;
-        }
-
-        private (byte[] bytes, int posToCrypt) GetBytes(IPacket packet)
-        {
-            using var ms = new MemoryStream();
-            using var bw = new BinaryWriter(ms);
-
-            bw.WriteBytes(Compressor.Compress(packet.TypeOfPacket.AssemblyQualifiedName));
-            packet.SerializePacket(bw);
-            packet.SerializeProtectedCustomData(bw);
-
-            var posToCrypt = (int)ms.Position;
-            packet.SerializeUnprotectedCustomData(bw);
-
-            var bytes = ms.ToArray();
-            return (bytes, posToCrypt);
-        }
-        private byte[] EncryptBytes(IPacketInfo packetInfo, byte[] bytes, int cryptedPos)
-        {
-            if (EncryptProvider == null)
-                return bytes;
-
-            var encrypter = EncryptProvider.GetEncrypter(packetInfo);
-            if (encrypter == null)
-                return bytes;
-
-            var crypted = encrypter.Crypt(bytes, 0, cryptedPos);
-
-            var result = new byte[sizeof(int) + cryptedPos + crypted.Length];
-            Array.Copy(BitConverter.GetBytes(crypted.Length), result, sizeof(int));
-            Array.Copy(crypted, 0, result, sizeof(int), crypted.Length);
-            Array.Copy(bytes, cryptedPos, result, sizeof(int) + crypted.Length, bytes.Length - cryptedPos);
-
-            EncryptProvider.DisposeEncrypter(encrypter);
-            return result;
-        }
-
-        private byte[] DecryptBytes(byte[] bytes)
-        {
-            if (EncryptProvider == null)
-                return bytes;
-
-            var cryptedLength = BitConverter.ToInt32(bytes, 0);
-
-            var decrypter = EncryptProvider.GetDecrypter(new ReadOnlySpan<byte>(bytes, cryptedLength, bytes.Length - cryptedLength));
-            if (decrypter == null)
-                return bytes;
-
-            var decryptedData = decrypter.Decrypt(bytes, sizeof(int), cryptedLength);
-
-            var decryptedBytes = new byte[decryptedData.Length + (bytes.Length - cryptedLength - sizeof(int))];
-
-            Array.Copy(decryptedData, decryptedBytes, decryptedData.Length);
-            Array.Copy(bytes, sizeof(int) + cryptedLength, decryptedBytes, decryptedData.Length, bytes.Length - cryptedLength - sizeof(int));
-
-            EncryptProvider.DisposeEncrypter(decrypter);
-            return decryptedBytes;
-        }
-        private IPacket GetResponsePacket(byte[] bytes)
-        {
-            using var ms = new MemoryStream(bytes);
-            using var reader = new BinaryReader(ms);
-
-            var packetType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(),
-                                                           b => Type.GetType(Compressor.Decompress(b)));
-            var packet = (IPacket)PacketActivator.CreateInstance(packetType);
-
-            packet.DeserializePacket(reader);
-            packet.DeserializeProtectedCustomData(reader);
-            packet.DeserializeUnprotectedCustomData(reader);
-
-            return packet;
         }
     }
 }

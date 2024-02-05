@@ -71,7 +71,7 @@ namespace CSDTP.Packets
             IsHasData = reader.ReadBoolean();
 
             if (IsHasData)
-                T.Deserialize(reader);
+                Data = T.Deserialize(reader);
         }
         public virtual void DeserializeUnprotectedCustomData(BinaryReader writer)
         {
