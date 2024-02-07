@@ -26,11 +26,6 @@ namespace CSDTP.Protocols.Abstracts
 
         private protected QueueProcessor<(byte[] data, IPAddress ip)> ReceiverQueue;
 
-        private CompiledActivator Activator = new();
-
-        private GlobalByteDictionary<Type> PacketType = new();
-        public IEncryptProvider? DecryptProvider { get; set; }
-
         public virtual int Port { get; }
 
         public event EventHandler<(IPAddress from, byte[] data)>? DataAppear;
@@ -65,10 +60,8 @@ namespace CSDTP.Protocols.Abstracts
 
             TokenSource = new CancellationTokenSource();
             var token = TokenSource.Token;
-            Task.Run(async () =>
-            {
-                await ReceiveWork(token);
-            });
+    
+            ReceiveWork(token);
         }
 
         protected abstract Task ReceiveWork(CancellationToken token);

@@ -38,9 +38,11 @@ namespace CSDTP.Protocols.Udp
                 try
                 {
                     var data = await Listener.ReceiveAsync(token);
-                    
+
                     token.ThrowIfCancellationRequested();
-                        ReceiverQueue.Add((data.Buffer, data.RemoteEndPoint.Address));
+
+                    Task.Run(()=>OnDataAppear(data.Buffer, data.RemoteEndPoint.Address));
+
                 }
                 catch (OperationCanceledException)
                 {

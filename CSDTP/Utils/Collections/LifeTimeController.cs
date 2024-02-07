@@ -10,7 +10,7 @@ namespace CSDTP.Utils.Collections
     internal class LifeTimeController<T> where T : IDisposable
     {
 
-        public List<KeyValuePair<T, DateTime>> Objects = new List<KeyValuePair<T, DateTime>>();
+        public List<KeyValuePair<T, DateTime>> Objects = new();
 
         private object locker = new object();
 

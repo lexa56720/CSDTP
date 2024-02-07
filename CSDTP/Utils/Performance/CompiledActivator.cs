@@ -11,8 +11,8 @@ namespace CSDTP.Utils.Performance
 {
     internal class CompiledActivator
     {
-        private ConcurrentDictionary<Type, Func<object>> Activators = new ConcurrentDictionary<Type, Func<object>>();
-        private Func<object> CreateCtor(Type type)
+        private static ConcurrentDictionary<Type, Func<object>> Activators = new ConcurrentDictionary<Type, Func<object>>();
+        private static Func<object> CreateCtor(Type type)
         {
             ConstructorInfo ctor = type.GetConstructors().First(c => c.GetParameters().Length == 0);
             NewExpression newExp = Expression.New(ctor);
@@ -20,13 +20,13 @@ namespace CSDTP.Utils.Performance
             return (Func<object>)lambda.Compile();
         }
 
-        public void Clear()
+        public static void Clear()
         {
             Activators.Clear();
         }
 
 
-        private Func<object> GetActivator(Type type)
+        private static Func<object> GetActivator(Type type)
         {
             if (!Activators.TryGetValue(type, out var activator))
             {
@@ -37,7 +37,7 @@ namespace CSDTP.Utils.Performance
         }
 
 
-        public object CreateInstance(Type type)
+        public static object CreateInstance(Type type)
         {
             return GetActivator(type)();
         }

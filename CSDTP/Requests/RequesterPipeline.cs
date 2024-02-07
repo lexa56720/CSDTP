@@ -82,7 +82,7 @@ namespace CSDTP.Requests
         {
             var decryptedData = PacketManager.DecryptBytes(e.data);
             var packet = PacketManager.GetResponsePacket(decryptedData);
-            packet.ReceiveTime = DateTime.Now;
+            packet.ReceiveTime = DateTime.UtcNow;
             packet.Source = e.from;
 
             if (packet.DataObj is IRequestContainer container)

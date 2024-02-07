@@ -107,7 +107,7 @@ namespace CSDTP.Requests
         {
             var decryptedData = PacketManager.DecryptBytes(data);
             var packet = PacketManager.GetResponsePacket(decryptedData);
-            packet.ReceiveTime = DateTime.Now;
+            packet.ReceiveTime = DateTime.UtcNow;
             packet.Source = from;
 
             var container = (IRequestContainer)packet.DataObj;
@@ -130,7 +130,7 @@ namespace CSDTP.Requests
 
             var responseData = handler(container.DataObj, packet);
             var responseContainerType = typeof(RequestContainer<>).MakeGenericType(container.ResponseObjType);
-            var responseContainer = (IRequestContainer)Activator.CreateInstance(responseContainerType);
+            var responseContainer = (IRequestContainer)CompiledActivator.CreateInstance(responseContainerType);
 
             responseContainer.Id = container.Id;
             responseContainer.RequestKind = RequesKind.Response;

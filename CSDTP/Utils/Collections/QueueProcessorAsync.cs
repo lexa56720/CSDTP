@@ -58,12 +58,9 @@ namespace CSDTP.Utils.Collections
                 int count = Queue.Count;
                 if (count > 0)
                 {
-                    var tasks = new Task[count];
                     for (int i = 0; i < count; i++)
                         if (Queue.TryDequeue(out var data))
-                            tasks[i] = HandleItem(data);
-
-                    await Task.WhenAll(tasks.Where(t=>t!=null));
+                             HandleItem(data);
                 }
                 else
                     await Task.Delay(Timeout);

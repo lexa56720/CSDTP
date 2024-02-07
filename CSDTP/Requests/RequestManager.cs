@@ -89,7 +89,7 @@ namespace CSDTP.Requests
                 Data = data,
                 IsHasData = true,
                 ReplyPort = replyPort,
-                SendTime = DateTime.Now,
+                SendTime = DateTime.UtcNow,
             };
         }
 

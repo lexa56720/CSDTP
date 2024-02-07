@@ -60,12 +60,8 @@ namespace CSDTP.Utils.Collections
                 {
                     count = Queue.Count;
 
-                    if (count >= SequentialLimit)
-                        ProcessParallel(count);
-
-                    else if (count < SequentialLimit && count > 0)
+                    if (count > 0)
                         ProcessSequentially(count);
-
                     else
                         await Task.Delay(Timeout);
                 }
@@ -74,13 +70,9 @@ namespace CSDTP.Utils.Collections
 
         private void ProcessSequentially(int count)
         {
-            Task.Run(() =>
-            {
-                for (int i = 0; i < count; i++)
-                    if (Queue.TryDequeue(out var data))
-                        HandleItem(data);
-            });
-
+            for (int i = 0; i < count; i++)
+                if (Queue.TryDequeue(out var data))
+                    HandleItem(data);
         }
         private void ProcessParallel(int count)
         {

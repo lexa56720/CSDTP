@@ -14,7 +14,6 @@ namespace CSDTP.Requests
     {
         private IEncryptProvider? EncryptProvider;
 
-        private CompiledActivator PacketActivator = new();
         private bool isDisposed;
 
         public PacketManager(IEncryptProvider encryptProvider)
@@ -103,7 +102,7 @@ namespace CSDTP.Requests
 
             var packetType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(),
                                                            b => Type.GetType(Compressor.Decompress(b)));
-            var packet = (IPacket)PacketActivator.CreateInstance(packetType);
+            var packet = (IPacket)CompiledActivator.CreateInstance(packetType);
 
             packet.DeserializePacket(reader);
             packet.DeserializeProtectedCustomData(reader);
