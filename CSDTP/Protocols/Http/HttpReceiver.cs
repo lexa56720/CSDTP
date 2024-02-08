@@ -1,15 +1,8 @@
-﻿using CSDTP.Cryptography.Providers;
-using CSDTP.Protocols.Abstracts;
-using System;
-using System.Collections.Generic;
+﻿using CSDTP.Protocols.Abstracts;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace CSDTP.Protocols.Http
 {
@@ -56,7 +49,7 @@ namespace CSDTP.Protocols.Http
                     token.ThrowIfCancellationRequested();
 
                     var bytes = await ReadBytes(data, token);
-          
+
                     token.ThrowIfCancellationRequested();
                     OnDataAppear(bytes, data.Request.RemoteEndPoint.Address);
 

@@ -1,24 +1,8 @@
-﻿using CSDTP.Cryptography.Algorithms;
-using CSDTP.Cryptography.Providers;
-using CSDTP.DosProtect;
-using CSDTP.Packets;
+﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
-using CSDTP.Utils;
-using CSDTP.Utils.Performance;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace CSDTP.Requests
 {

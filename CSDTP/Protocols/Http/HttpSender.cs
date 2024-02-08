@@ -1,17 +1,11 @@
-﻿using CSDTP.Cryptography.Providers;
-using CSDTP.Protocols.Abstracts;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using CSDTP.Protocols.Abstracts;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CSDTP.Protocols.Http
 {
     internal class HttpSender : BaseSender
     {
-        private HttpClient HttpClient { get; set; } 
+        private HttpClient HttpClient { get; set; }
         private CancellationTokenSource CancellationToken { get; set; } = new CancellationTokenSource();
         public HttpSender(IPEndPoint destination) : base(destination)
         {

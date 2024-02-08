@@ -1,19 +1,4 @@
-﻿using CSDTP.Cryptography.Providers;
-using CSDTP.DosProtect;
-using CSDTP.Packets;
-using CSDTP.Utils;
-using CSDTP.Utils.Collections;
-using CSDTP.Utils.Performance;
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+﻿using System.Net;
 
 namespace CSDTP.Protocols.Abstracts
 {
@@ -53,7 +38,7 @@ namespace CSDTP.Protocols.Abstracts
 
             TokenSource = new CancellationTokenSource();
             var token = TokenSource.Token;
-    
+
             ReceiveWork(token);
         }
 

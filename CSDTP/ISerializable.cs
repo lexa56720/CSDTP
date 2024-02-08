@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CSDTP
+﻿namespace CSDTP
 {
 
-    public interface ISerializable<T> where T:new()
+    public interface ISerializable<T> where T : new()
     {
         public void Serialize(BinaryWriter writer);
 

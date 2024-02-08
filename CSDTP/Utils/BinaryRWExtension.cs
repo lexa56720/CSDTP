@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CSDTP.Utils
+﻿namespace CSDTP.Utils
 {
     public static class BinaryRWExtension
     {
@@ -50,18 +44,18 @@ namespace CSDTP.Utils
             return array;
         }
 
-        public static void Write<T>(this BinaryWriter writer, T[] array) where T : ISerializable<T>,new()
+        public static void Write<T>(this BinaryWriter writer, T[] array) where T : ISerializable<T>, new()
         {
             writer.Write(array.Length);
             for (int i = 0; i < array.Length; i++)
                 array[i].Serialize(writer);
         }
-        public static T[] Read<T>(this BinaryReader reader) where T:ISerializable<T>, new()
+        public static T[] Read<T>(this BinaryReader reader) where T : ISerializable<T>, new()
         {
             var length = reader.ReadInt32();
             var array = new T[length];
             for (int i = 0; i < length; i++)
-                array[i]=T.Deserialize(reader);
+                array[i] = T.Deserialize(reader);
             return array;
         }
 

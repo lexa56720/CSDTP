@@ -1,18 +1,8 @@
 ﻿using CSDTP.Packets;
-using CSDTP.Protocols;
-using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
 using CSDTP.Utils.Performance;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace CSDTP.Requests
 {

@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.IO.Compression;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CSDTP.Utils.Performance
 {
@@ -41,8 +37,8 @@ namespace CSDTP.Utils.Performance
                 dstream.CopyTo(output);
                 result = Encoding.UTF8.GetString(output.ToArray());
 
-                BytesString.TryAdd(bytes,result);
-                StringBytes.TryAdd(result,bytes);
+                BytesString.TryAdd(bytes, result);
+                StringBytes.TryAdd(result, bytes);
             }
             return result;
         }

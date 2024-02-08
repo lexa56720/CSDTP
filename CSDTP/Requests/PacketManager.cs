@@ -1,16 +1,11 @@
 ﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
-using CSDTP.Utils.Performance;
 using CSDTP.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using CSDTP.Utils.Performance;
 
 namespace CSDTP.Requests
 {
-    internal class PacketManager:IDisposable
+    internal class PacketManager : IDisposable
     {
         private IEncryptProvider? EncryptProvider;
 
@@ -66,7 +61,7 @@ namespace CSDTP.Requests
 
             var crypted = encrypter.Crypt(bytes, 0, cryptedPos);
 
-            var result = new byte[sizeof(int) + (bytes.Length-cryptedPos) + crypted.Length];
+            var result = new byte[sizeof(int) + (bytes.Length - cryptedPos) + crypted.Length];
             Array.Copy(BitConverter.GetBytes(crypted.Length), result, sizeof(int));
             Array.Copy(crypted, 0, result, sizeof(int), crypted.Length);
             Array.Copy(bytes, cryptedPos, result, sizeof(int) + crypted.Length, bytes.Length - cryptedPos);

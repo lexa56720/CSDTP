@@ -1,14 +1,9 @@
 ﻿using CSDTP.Utils;
 using CSDTP.Utils.Performance;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CSDTP.Requests.RequestHeaders
 {
-    internal class RequestContainer<T> : IRequestContainer, ISerializable<RequestContainer<T>> where T : ISerializable<T>,new()
+    internal class RequestContainer<T> : IRequestContainer, ISerializable<RequestContainer<T>> where T : ISerializable<T>, new()
     {
         public Guid Id { get; set; }
 
@@ -54,11 +49,11 @@ namespace CSDTP.Requests.RequestHeaders
             var requestType = (RequesKind)reader.ReadByte();
             if (requestType == RequesKind.Request)
             {
-                var resposeObjType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(), 
+                var resposeObjType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(),
                                                                     b => Type.GetType(Compressor.Decompress(b)));
                 return new RequestContainer<T>(T.Deserialize(reader), id, requestType)
                 {
-                    ResponseObjType=resposeObjType
+                    ResponseObjType = resposeObjType
                 };
             }
             return new RequestContainer<T>(T.Deserialize(reader), id, requestType);

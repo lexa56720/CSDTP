@@ -1,9 +1,4 @@
 ﻿using CSDTP;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Test
 {
@@ -22,7 +17,7 @@ namespace Test
 
         public static Message Deserialize(BinaryReader reader)
         {
-           return new Message(reader.ReadString());
+            return new Message(reader.ReadString());
         }
 
         public void Serialize(BinaryWriter writer)

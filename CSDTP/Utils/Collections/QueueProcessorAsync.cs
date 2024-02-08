@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 
 namespace CSDTP.Utils.Collections
 {
     internal class QueueProcessorAsync<T>
     {
-        private ConcurrentQueue<(T item,DateTime addedTime)> Queue = new();
+        private ConcurrentQueue<(T item, DateTime addedTime)> Queue = new();
         private Func<T, Task> HandleItem;
         public int SequentialLimit { get; }
         public TimeSpan Timeout { get; }
@@ -43,7 +38,7 @@ namespace CSDTP.Utils.Collections
 
         public void Add(T item)
         {
-            Queue.Enqueue((item,DateTime.UtcNow));
+            Queue.Enqueue((item, DateTime.UtcNow));
         }
 
         public void Clear()

@@ -1,16 +1,11 @@
 ﻿using Open.Nat;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.NetworkInformation;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CSDTP.Utils
 {
     public static class PortUtils
     {
-        public static int GetFreePort(int startingPort=1)
+        public static int GetFreePort(int startingPort = 1)
         {
             var properties = IPGlobalProperties.GetIPGlobalProperties();
 

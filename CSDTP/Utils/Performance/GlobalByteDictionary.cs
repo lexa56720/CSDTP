@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CSDTP.Utils.Performance
 {
@@ -13,11 +8,11 @@ namespace CSDTP.Utils.Performance
 
         public static ConcurrentDictionary<byte[], T> Dictionary = new ConcurrentDictionary<byte[], T>(new ByteArrayComparer());
 
-        public static T Get(byte[] key, Func<byte[],T> extractor)
+        public static T Get(byte[] key, Func<byte[], T> extractor)
         {
-            if(!Dictionary.TryGetValue(key, out var result))
+            if (!Dictionary.TryGetValue(key, out var result))
             {
-                result= extractor(key);
+                result = extractor(key);
                 Dictionary.TryAdd(key, result);
             }
             return result;

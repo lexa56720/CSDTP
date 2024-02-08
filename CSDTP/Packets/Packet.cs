@@ -1,16 +1,4 @@
-﻿using CSDTP.Cryptography.Algorithms;
-using CSDTP.Cryptography.Providers;
-using CSDTP.Packets;
-using CSDTP.Utils;
-using CSDTP.Utils.Performance;
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Net;
-using System.Reflection.PortableExecutable;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Net;
 
 namespace CSDTP.Packets
 {

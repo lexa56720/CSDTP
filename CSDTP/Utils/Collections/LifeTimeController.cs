@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CSDTP.Utils.Collections
+﻿namespace CSDTP.Utils.Collections
 {
     internal class LifeTimeController<T> where T : IDisposable
     {
@@ -64,7 +57,7 @@ namespace CSDTP.Utils.Collections
                 {
                     if (predicate(Objects[i].Key))
                     {
-                        Objects[i] =new KeyValuePair<T, DateTime>(Objects[i].Key, DateTime.UtcNow.Add(LifeTime));
+                        Objects[i] = new KeyValuePair<T, DateTime>(Objects[i].Key, DateTime.UtcNow.Add(LifeTime));
                         return Objects[i].Key;
                     }
                 }

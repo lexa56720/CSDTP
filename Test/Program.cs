@@ -1,17 +1,15 @@
 ﻿using CSDTP;
-using CSDTP.Cryptography;
 using CSDTP.Cryptography.Algorithms;
 using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Requests;
-using CSDTP.Utils;
 using System.Diagnostics;
 using System.Net;
 
 namespace Test
 {
-    public class ShitPacket<T> : Packet<T> where T : ISerializable<T>,new()
+    public class ShitPacket<T> : Packet<T> where T : ISerializable<T>, new()
     {
         public ShitPacket()
         {
@@ -39,7 +37,7 @@ namespace Test
         public static Protocol protocol = Protocol.Udp;
         static async Task Main(string[] args)
         {
-           // var rp = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, 666), 667, Protocol.Udp);
+            // var rp = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, 666), 667, Protocol.Udp);
             //await rp.SendRequestAsync<Message, Message>(new Message("HI"), TimeSpan.FromSeconds(5));
             //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
 
@@ -85,12 +83,12 @@ namespace Test
             //var port = PortUtils.GetFreePort() ;
             var port = 250;
             var protocol = Protocol.Http;
-            using var responder =ResponderFactory.Create(protocol, crypter, typeof(ShitPacket<>));
+            using var responder = ResponderFactory.Create(protocol, crypter, typeof(ShitPacket<>));
             responder.RegisterRequestHandler<Message, Message>(Modify);
             responder.Start();
 
 
-            using var requester =new Requester(new IPEndPoint(IPAddress.Loopback, responder.ListenPort), port, protocol, crypter, typeof(ShitPacket<>));
+            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, responder.ListenPort), port, protocol, crypter, typeof(ShitPacket<>));
 
 
             int count = 0;
@@ -106,12 +104,12 @@ namespace Test
                                                                                .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
-                if (stopwatch.ElapsedMilliseconds > globalCount*1000)
+                if (stopwatch.ElapsedMilliseconds > globalCount * 1000)
                 {
 
                     Console.Clear();
                     Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds + " " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
-                    count =0;
+                    count = 0;
                     counter = 0;
                     stopwatch.Restart();
                     globalCount++;
