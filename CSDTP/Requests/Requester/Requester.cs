@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 namespace CSDTP.Requests
 {
-    public class RequesterPipeline : IDisposable
+    public class Requester : IDisposable
     {
         public int ReplyPort => Receiver.Port;
 
@@ -34,13 +34,13 @@ namespace CSDTP.Requests
 
         private bool isDisposed;
 
-        public RequesterPipeline(ISender sender, IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
+        public Requester(ISender sender, IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
             Sender = sender;
             Receiver = receiver;
             Initialize(customPacketType, encryptProvider);
         }
-        public RequesterPipeline(IPEndPoint destination, int replyPort, Protocol protocol, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
+        public Requester(IPEndPoint destination, int replyPort, Protocol protocol, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
             Sender = SenderFactory.CreateSender(destination, protocol);
             Receiver = ReceiverFactory.CreateReceiver(replyPort, protocol);
@@ -80,6 +80,9 @@ namespace CSDTP.Requests
 
         private void ResponseAppear(object? sender, (IPAddress from, byte[] data) e)
         {
+            if (e.data.Length == 0)
+                return;
+
             var decryptedData = PacketManager.DecryptBytes(e.data);
             var packet = PacketManager.GetResponsePacket(decryptedData);
             packet.ReceiveTime = DateTime.UtcNow;
@@ -102,29 +105,36 @@ namespace CSDTP.Requests
 
             return await Sender.SendBytes(cryptedPacketBytes);
         }
-        public async Task<TResponse?> SendRequestAsync<TResponse, TRequest>(TRequest data, TimeSpan timeout)
+        public async Task<TResponse?> RequestAsync<TResponse, TRequest>(TRequest data, TimeSpan timeout)
                                       where TRequest : ISerializable<TRequest>, new()
                                       where TResponse : ISerializable<TResponse>, new()
         {
-            var container = RequestManager.PackToContainer<TResponse, TRequest>(data);
-            container.RequestKind = RequesKind.Request;
-            container.ResponseObjType = typeof(TResponse);
-            var packet = RequestManager.PackToPacket(container, ReplyPort);
+            try
+            {
+                var container = RequestManager.PackToContainer<TResponse, TRequest>(data);
+                container.RequestKind = RequesKind.Request;
+                container.ResponseObjType = typeof(TResponse);
+                var packet = RequestManager.PackToPacket(container, ReplyPort);
 
-            var packetBytes = PacketManager.GetBytes(packet);
+                var packetBytes = PacketManager.GetBytes(packet);
 
-            var cryptedPacketBytes = PacketManager.EncryptBytes(packet, packetBytes.bytes, packetBytes.posToCrypt);
+                var cryptedPacketBytes = PacketManager.EncryptBytes(packet, packetBytes.bytes, packetBytes.posToCrypt);
 
-            if (!RequestManager.AddRequest(container))
+                if (!RequestManager.AddRequest(container))
+                    return default;
+
+                await Sender.SendBytes(cryptedPacketBytes);
+                var responsePacket = await RequestManager.GetResponseAsync(container, timeout);
+
+                if (responsePacket == null)
+                    return default;
+
+                return (TResponse)((IRequestContainer)responsePacket.DataObj).DataObj;
+            }
+            catch
+            {
                 return default;
-
-            await Sender.SendBytes(cryptedPacketBytes);
-            var responsePacket = await RequestManager.GetResponseAsync(container, timeout);
-
-            if (responsePacket == null)
-                return default;
-
-            return (TResponse)((IRequestContainer)responsePacket.DataObj).DataObj;
+            }
         }
     }
 }

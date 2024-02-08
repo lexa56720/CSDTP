@@ -13,13 +13,12 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CSDTP.Requests
 {
     internal class RequestManager
     {
-        public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket>> Requests = new();
+        public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket?>> Requests = new();
         private Type? CustomPacketType { get; set; } = null;
 
         private CompiledMethod? CreateCustomPacket { get; set; } = null;
@@ -73,9 +72,9 @@ namespace CSDTP.Requests
         {
             if (CustomPacketType != null)
             {
-                return (IPacket)CreateCustomPacket.Invoke(this, 
-                        [typeof(TData), CustomPacketType.MakeGenericType(typeof(RequestContainer<TData>))], 
-                        data, 
+                return (IPacket)CreateCustomPacket.Invoke(this,
+                        [typeof(TData), CustomPacketType.MakeGenericType(typeof(RequestContainer<TData>))],
+                        data,
                         replyPort);
             }
             return GetPacket<TData, Packet<RequestContainer<TData>>>(data, replyPort);
@@ -108,6 +107,10 @@ namespace CSDTP.Requests
                 if (response.Task.IsCompletedSuccessfully && response.Task.Result is not null)
                     return result;
             }
+            catch (TimeoutException ex)
+            {
+                throw;
+            }
             finally
             {
                 Requests.TryRemove(requestContainer.Id, out _);
@@ -115,7 +118,7 @@ namespace CSDTP.Requests
             return null;
         }
 
-        public void ResponseAppear(IRequestContainer requestContainer, IPacket packet)
+        public void ResponseAppear(IRequestContainer requestContainer, IPacket? packet)
         {
             if (Requests.TryGetValue(requestContainer.Id, out var request))
                 request.SetResult(packet);

@@ -41,7 +41,7 @@ namespace CSDTP.Protocols.Udp
 
                     token.ThrowIfCancellationRequested();
 
-                    Task.Run(()=>OnDataAppear(data.Buffer, data.RemoteEndPoint.Address));
+                    OnDataAppear(data.Buffer, data.RemoteEndPoint.Address);
 
                 }
                 catch (OperationCanceledException)

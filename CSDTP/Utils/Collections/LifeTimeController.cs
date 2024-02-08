@@ -97,6 +97,5 @@ namespace CSDTP.Utils.Collections
 
             Clear();
         }
-
     }
 }

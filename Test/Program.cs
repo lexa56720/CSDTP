@@ -84,13 +84,13 @@ namespace Test
 
             //var port = PortUtils.GetFreePort() ;
             var port = 250;
-
-            using var responder = new UdpResponderPipeline(crypter, typeof(ShitPacket<>));
+            var protocol = Protocol.Http;
+            using var responder =ResponderFactory.Create(protocol, crypter, typeof(ShitPacket<>));
             responder.RegisterRequestHandler<Message, Message>(Modify);
             responder.Start();
 
 
-            using var requester = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, responder.Port), port, Protocol.Udp, crypter, typeof(ShitPacket<>));
+            using var requester =new Requester(new IPEndPoint(IPAddress.Loopback, responder.ListenPort), port, protocol, crypter, typeof(ShitPacket<>));
 
 
             int count = 0;
@@ -102,17 +102,18 @@ namespace Test
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
-                var result = await  requester.SendRequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                var result = requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
                                                                                .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);
-                //if (stopwatch.ElapsedMilliseconds > globalCount*1000)
+                if (stopwatch.ElapsedMilliseconds > globalCount*1000)
                 {
 
                     Console.Clear();
                     Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds + " " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
-                    //count =0;
-                    // stopwatch.Restart();
+                    count =0;
+                    counter = 0;
+                    stopwatch.Restart();
                     globalCount++;
                 }
 

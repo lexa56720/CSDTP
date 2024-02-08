@@ -15,7 +15,6 @@ namespace CSDTP.Cryptography.Algorithms
 
         public bool IsDisposed { get; private set; }
 
-        private object locker = new object();
         public AesEncrypter()
         {
             using var aes = Aes.Create();
@@ -50,7 +49,6 @@ namespace CSDTP.Cryptography.Algorithms
             csEncrypt.FlushFinalBlock();
 
             return msEncrypt.ToArray();
-
         }
 
         public byte[] Decrypt(byte[] data)
@@ -69,8 +67,6 @@ namespace CSDTP.Cryptography.Algorithms
 
             return brDecrypt.ReadBytes(data.Length);
         }
-
-
 
         public byte[] Crypt(byte[] data, int offset, int count)
         {

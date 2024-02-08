@@ -22,6 +22,8 @@ namespace CSDTP.Protocols.Http
         public HttpReceiver()
         {
             Listener = new HttpListener();
+            Listener.Prefixes.Add($"http://+:{Utils.PortUtils.GetFreePort(666)}/");
+
         }
 
         public HttpReceiver(int port) : base(port)
@@ -50,24 +52,25 @@ namespace CSDTP.Protocols.Http
             {
                 try
                 {
-                    var data = await Listener.GetContextAsync();
-
-                    token.ThrowIfCancellationRequested();
-                    using Stream output = data.Response.OutputStream;
-                    await output.FlushAsync(token);
+                    var data = await Listener.GetContextAsync().WaitAsync(token);
                     token.ThrowIfCancellationRequested();
 
-                    ReceiverQueue.Add((await ReadBytes(data, token), data.Request.RemoteEndPoint.Address));
+                    var bytes = await ReadBytes(data, token);
+          
+                    token.ThrowIfCancellationRequested();
+                    OnDataAppear(bytes, data.Request.RemoteEndPoint.Address);
+
+                    data.Response.StatusCode = (int)HttpStatusCode.OK;
+                    data.Response.Close();
                 }
                 catch (OperationCanceledException)
                 {
-                    return;
+                    break;
                 }
 
             }
             Listener.Stop();
             Listener.Close();
-            ReceiverQueue.Clear();
         }
 
 

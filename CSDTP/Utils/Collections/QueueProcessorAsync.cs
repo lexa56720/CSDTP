@@ -9,17 +9,17 @@ namespace CSDTP.Utils.Collections
 {
     internal class QueueProcessorAsync<T>
     {
-        private ConcurrentQueue<T> Queue = new ConcurrentQueue<T>();
+        private ConcurrentQueue<(T item,DateTime addedTime)> Queue = new();
         private Func<T, Task> HandleItem;
         public int SequentialLimit { get; }
         public TimeSpan Timeout { get; }
 
         public bool IsRunning { get; private set; }
 
-        public QueueProcessorAsync(Func<T, Task> handleItem, int seqentialLimit, TimeSpan timeout)
+        public QueueProcessorAsync(Func<T, Task> handleItem, int sequentialLimit, TimeSpan timeout)
         {
             HandleItem = handleItem;
-            SequentialLimit = seqentialLimit;
+            SequentialLimit = sequentialLimit;
             Timeout = timeout;
         }
 
@@ -43,7 +43,7 @@ namespace CSDTP.Utils.Collections
 
         public void Add(T item)
         {
-            Queue.Enqueue(item);
+            Queue.Enqueue((item,DateTime.UtcNow));
         }
 
         public void Clear()
@@ -56,11 +56,21 @@ namespace CSDTP.Utils.Collections
             while (IsRunning)
             {
                 int count = Queue.Count;
-                if (count > 0)
+                if (count > 0 && count < SequentialLimit)
+                {
+                    await Parallel.ForAsync(0, count, async (i, c) =>
+                      {
+                          if (Queue.TryDequeue(out var data))
+                              await HandleItem(data.item);
+                      });
+                }
+                else if (count > 0)
                 {
                     for (int i = 0; i < count; i++)
+                    {
                         if (Queue.TryDequeue(out var data))
-                             HandleItem(data);
+                            await HandleItem(data.item);
+                    }
                 }
                 else
                     await Task.Delay(Timeout);

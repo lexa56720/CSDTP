@@ -23,22 +23,16 @@ namespace CSDTP.Protocols.Abstracts
 
         protected CancellationTokenSource? TokenSource { get; set; }
 
-
-        private protected QueueProcessor<(byte[] data, IPAddress ip)> ReceiverQueue;
-
         public virtual int Port { get; }
 
         public event EventHandler<(IPAddress from, byte[] data)>? DataAppear;
         public BaseReceiver(int port)
         {
             Port = port;
-            ReceiverQueue = new QueueProcessor<(byte[], IPAddress)>(HandleData, 10, TimeSpan.FromMilliseconds(20));
         }
         public BaseReceiver()
         {
-            ReceiverQueue = new QueueProcessor<(byte[], IPAddress)>(HandleData, 10, TimeSpan.FromMilliseconds(20));
         }
-
 
         public virtual void Dispose()
         {
@@ -56,7 +50,6 @@ namespace CSDTP.Protocols.Abstracts
                 return;
 
             IsReceiving = true;
-            ReceiverQueue.Start();
 
             TokenSource = new CancellationTokenSource();
             var token = TokenSource.Token;
@@ -72,17 +65,11 @@ namespace CSDTP.Protocols.Abstracts
                 return;
 
             IsReceiving = false;
-            ReceiverQueue.Stop();
         }
 
         protected virtual void OnDataAppear(byte[] bytes, IPAddress ip)
         {
             DataAppear?.Invoke(this, (ip, bytes));
-        }
-
-        private void HandleData((byte[] data, IPAddress ip) packetInfo)
-        {
-            OnDataAppear(packetInfo.data, packetInfo.ip);
         }
     }
 }
