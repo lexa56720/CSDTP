@@ -1,4 +1,5 @@
-﻿using CSDTP;
+﻿using AutoSerializer;
+using CSDTP;
 using CSDTP.Cryptography.Algorithms;
 using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
@@ -37,6 +38,7 @@ namespace Test
         public static Protocol protocol = Protocol.Udp;
         static async Task Main(string[] args)
         {
+            Serializer.SerializerProvider = new SerializerProvider();
             // var rp = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, 666), 667, Protocol.Udp);
             //await rp.SendRequestAsync<Message, Message>(new Message("HI"), TimeSpan.FromSeconds(5));
             //await CSDTP.Utils.PortUtils.PortForward(8888, "fff");
@@ -100,7 +102,7 @@ namespace Test
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
-                var result = requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                var result = await requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
                                                                                .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);

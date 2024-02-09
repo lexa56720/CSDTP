@@ -1,4 +1,5 @@
-﻿using CSDTP.Cryptography.Providers;
+﻿using AutoSerializer;
+using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Utils;
 using CSDTP.Utils.Performance;

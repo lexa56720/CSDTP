@@ -3,6 +3,7 @@ using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
 using System.Net;
+using AutoSerializer;
 
 namespace CSDTP.Requests
 {

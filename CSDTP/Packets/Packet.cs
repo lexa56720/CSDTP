@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using AutoSerializer;
+using System.Net;
 
 namespace CSDTP.Packets
 {

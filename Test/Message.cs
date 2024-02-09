@@ -1,10 +1,11 @@
-﻿using CSDTP;
+﻿using AutoSerializer;
+using CSDTP;
 
 namespace Test
 {
     internal class Message : ISerializable<Message>
     {
-        public string Text { get; }
+        public string Text { get; set; }
         public Message(string text)
         {
             Text = text;
@@ -13,16 +14,6 @@ namespace Test
         public Message()
         {
             Text = "";
-        }
-
-        public static Message Deserialize(BinaryReader reader)
-        {
-            return new Message(reader.ReadString());
-        }
-
-        public void Serialize(BinaryWriter writer)
-        {
-            writer.Write(Text);
         }
     }
 }

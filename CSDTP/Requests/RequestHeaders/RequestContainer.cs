@@ -1,5 +1,6 @@
 ﻿using CSDTP.Utils;
 using CSDTP.Utils.Performance;
+using AutoSerializer;
 
 namespace CSDTP.Requests.RequestHeaders
 {

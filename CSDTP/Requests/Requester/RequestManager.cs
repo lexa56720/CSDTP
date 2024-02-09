@@ -3,6 +3,7 @@ using CSDTP.Requests.RequestHeaders;
 using CSDTP.Utils.Performance;
 using System.Collections.Concurrent;
 using System.Reflection;
+using AutoSerializer;
 
 namespace CSDTP.Requests
 {
