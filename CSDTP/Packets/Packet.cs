@@ -20,8 +20,6 @@ namespace CSDTP.Packets
 
         public IPAddress? Source { get; set; }
 
-        public object? InfoObj { get; set; }
-
         public Packet(T data)
         {
             Data = data;

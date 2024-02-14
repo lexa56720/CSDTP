@@ -13,7 +13,6 @@ namespace CSDTP.Packets
 
         public object? DataObj { get; }
 
-
         public void SerializePacket(BinaryWriter writer);
         public void SerializeUnprotectedCustomData(BinaryWriter writer);
         public void SerializeProtectedCustomData(BinaryWriter writer);

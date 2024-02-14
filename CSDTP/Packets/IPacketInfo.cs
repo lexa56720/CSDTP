@@ -6,8 +6,6 @@ namespace CSDTP.Packets
     {
         public IPAddress? Source { get; set; }
 
-        public object? InfoObj { get; set; }
-
         public int ReplyPort { get; }
 
         public DateTime SendTime { get; }
