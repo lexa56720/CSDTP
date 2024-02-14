@@ -9,8 +9,14 @@ namespace CSDTP.Cryptography.Providers
         {
             Encrypter = encrypter;
         }
-
+        public SimpleEncryptProvider(IEncrypter encrypter,IEncrypter decrypter)
+        {
+            Encrypter = encrypter;
+            Decrypter = decrypter;
+        }
         public IEncrypter Encrypter { get; }
+        public IEncrypter Decrypter { get; }
+
         private bool isDisposed;
         public void Dispose()
         {
@@ -26,10 +32,12 @@ namespace CSDTP.Cryptography.Providers
 
         public IEncrypter? GetDecrypter(ReadOnlySpan<byte> bytes)
         {
+            if (Decrypter != null)
+                return Decrypter;
             return Encrypter;
         }
 
-        public IEncrypter? GetEncrypter(IPacketInfo packet)
+        public IEncrypter? GetEncrypter(IPacketInfo responsePacket, IPacketInfo? requestPacket = null)
         {
             return Encrypter;
         }

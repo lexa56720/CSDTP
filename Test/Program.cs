@@ -84,13 +84,13 @@ namespace Test
 
             //var port = PortUtils.GetFreePort() ;
             var port = 250;
-            var protocol = Protocol.Http;
-            using var responder = ResponderFactory.Create(protocol, crypter, typeof(ShitPacket<>));
+            var protocol = Protocol.Udp;
+            using var responder = ResponderFactory.Create(crypter, typeof(ShitPacket<>), protocol);
             responder.RegisterRequestHandler<Message, Message>(Modify);
             responder.Start();
 
 
-            using var requester = new Requester(new IPEndPoint(IPAddress.Loopback, responder.ListenPort), port, protocol, crypter, typeof(ShitPacket<>));
+            using var requester = RequesterFactory.Create(new IPEndPoint(IPAddress.Loopback, responder.ListenPort), port, crypter, typeof(ShitPacket<>), protocol);
 
 
             int count = 0;

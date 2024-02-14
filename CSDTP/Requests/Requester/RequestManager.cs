@@ -9,7 +9,7 @@ namespace CSDTP.Requests
 {
     internal class RequestManager
     {
-        public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket?>> Requests = new();
+        public ConcurrentDictionary<Guid, TaskCompletionSource<IPacket<IRequestContainer>>> Requests = new();
         private Type? CustomPacketType { get; set; } = null;
 
         private CompiledMethod? CreateCustomPacket { get; set; } = null;
@@ -85,10 +85,10 @@ namespace CSDTP.Requests
 
         public bool AddRequest(IRequestContainer requestContainer)
         {
-            var resultSource = new TaskCompletionSource<IPacket>();
+            var resultSource = new TaskCompletionSource<IPacket<IRequestContainer>>();
             return Requests.TryAdd(requestContainer.Id, resultSource);
         }
-        public async Task<IPacket?> GetResponseAsync(IRequestContainer requestContainer, TimeSpan timeout)
+        public async Task<IPacket<IRequestContainer>?> GetResponseAsync(IRequestContainer requestContainer, TimeSpan timeout)
         {
             if (!Requests.TryGetValue(requestContainer.Id, out var response))
                 return null;
@@ -98,7 +98,7 @@ namespace CSDTP.Requests
                 if (response.Task.IsCompletedSuccessfully && response.Task.Result is not null)
                     return result;
             }
-            catch (TimeoutException ex)
+            catch
             {
                 throw;
             }
@@ -109,9 +109,9 @@ namespace CSDTP.Requests
             return null;
         }
 
-        public void ResponseAppear(IRequestContainer requestContainer, IPacket? packet)
+        public void ResponseAppear(IPacket<IRequestContainer> packet)
         {
-            if (Requests.TryGetValue(requestContainer.Id, out var request))
+            if (Requests.TryGetValue(packet.Data.Id, out var request))
                 request.SetResult(packet);
         }
     }

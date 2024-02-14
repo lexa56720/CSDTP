@@ -11,26 +11,21 @@ namespace CSDTP.Requests
     {
         public int ReplyPort => Receiver.Port;
 
-        private ISender Sender;
-        private IReceiver Receiver;
+        private readonly ISender Sender;
+        private readonly IReceiver Receiver;
 
         private RequestManager RequestManager = null!;
         private PacketManager PacketManager = null!;
 
         private bool isDisposed;
 
-        public Requester(ISender sender, IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
+        internal Requester(ISender sender, IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
             Sender = sender;
             Receiver = receiver;
             Initialize(customPacketType, encryptProvider);
         }
-        public Requester(IPEndPoint destination, int replyPort, Protocol protocol, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
-        {
-            Sender = SenderFactory.CreateSender(destination, protocol);
-            Receiver = ReceiverFactory.CreateReceiver(replyPort, protocol);
-            Initialize(customPacketType, encryptProvider);
-        }
+
         private void Initialize(Type? customPacketType, IEncryptProvider? encryptProvider)
         {
             PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
@@ -69,12 +64,13 @@ namespace CSDTP.Requests
                 return;
 
             var decryptedData = PacketManager.DecryptBytes(e.data);
-            var packet = PacketManager.GetResponsePacket(decryptedData);
+            var packet = PacketManager.GetPacketFromBytes(decryptedData);
+            if (packet == null)
+                return;
             packet.ReceiveTime = DateTime.UtcNow;
             packet.Source = e.from;
 
-            if (packet.DataObj is IRequestContainer container)
-                RequestManager.ResponseAppear(container, packet);
+                RequestManager.ResponseAppear(packet);
         }
 
         public async Task<bool> SendAsync<TData>(TData data)
@@ -86,7 +82,7 @@ namespace CSDTP.Requests
 
             var packetBytes = PacketManager.GetBytes(packet);
 
-            var cryptedPacketBytes = PacketManager.EncryptBytes(packet, packetBytes.bytes, packetBytes.posToCrypt);
+            var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, packet);
 
             return await Sender.SendBytes(cryptedPacketBytes);
         }
@@ -103,7 +99,7 @@ namespace CSDTP.Requests
 
                 var packetBytes = PacketManager.GetBytes(packet);
 
-                var cryptedPacketBytes = PacketManager.EncryptBytes(packet, packetBytes.bytes, packetBytes.posToCrypt);
+                var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, packet);
 
                 if (!RequestManager.AddRequest(container))
                     return default;
@@ -114,7 +110,7 @@ namespace CSDTP.Requests
                 if (responsePacket == null)
                     return default;
 
-                return (TResponse)((IRequestContainer)responsePacket.DataObj).DataObj;
+                return (TResponse)responsePacket.Data.DataObj;
             }
             catch
             {

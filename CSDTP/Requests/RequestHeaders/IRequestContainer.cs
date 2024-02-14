@@ -1,4 +1,6 @@
-﻿namespace CSDTP.Requests.RequestHeaders
+﻿using AutoSerializer;
+
+namespace CSDTP.Requests.RequestHeaders
 {
     public enum RequesKind
     {
@@ -6,6 +8,7 @@
         Data,
         Response,
     }
+
     public interface IRequestContainer
     {
         public Guid Id { get; set; }

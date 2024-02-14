@@ -1,6 +1,12 @@
-﻿namespace CSDTP.Packets
-{
+﻿using AutoSerializer;
+using CSDTP.Requests.RequestHeaders;
 
+namespace CSDTP.Packets
+{
+    public interface IPacket<out T> : IPacket
+    {
+        T Data { get; }
+    }
     public interface IPacket : IPacketInfo
     {
         public Type TypeOfPacket { get; }

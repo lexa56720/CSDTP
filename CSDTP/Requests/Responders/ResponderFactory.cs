@@ -6,7 +6,7 @@ namespace CSDTP.Requests
     public static class ResponderFactory
     {
 
-        public static Responder Create(Protocol protocol, IEncryptProvider encryptProvider, Type customPacketType)
+        public static Responder Create(IEncryptProvider encryptProvider, Type customPacketType, Protocol protocol=Protocol.Udp)
         {
             return protocol switch
             {
@@ -26,7 +26,7 @@ namespace CSDTP.Requests
             };
         }
 
-        public static Responder Create(Protocol protocol, IEncryptProvider encryptProvider)
+        public static Responder Create(IEncryptProvider encryptProvider, Protocol protocol = Protocol.Udp)
         {
             return protocol switch
             {
@@ -36,7 +36,7 @@ namespace CSDTP.Requests
             };
         }
 
-        public static Responder Create(Protocol protocol, Type customPacketType)
+        public static Responder Create( Type customPacketType, Protocol protocol = Protocol.Udp)
         {
             return protocol switch
             {
@@ -47,7 +47,7 @@ namespace CSDTP.Requests
         }
 
 
-        public static Responder Create(Protocol protocol, int port, IEncryptProvider encryptProvider, Type customPacketType)
+        public static Responder Create(int port, IEncryptProvider encryptProvider, Type customPacketType, Protocol protocol = Protocol.Udp)
         {
             return protocol switch
             {
@@ -57,7 +57,7 @@ namespace CSDTP.Requests
             };
         }
 
-        public static Responder Create(Protocol protocol, int port)
+        public static Responder Create(int port,Protocol protocol = Protocol.Udp)
         {
             return protocol switch
             {
@@ -67,7 +67,7 @@ namespace CSDTP.Requests
             };
         }
 
-        public static Responder Create(Protocol protocol, int port, IEncryptProvider encryptProvider)
+        public static Responder Create( int port, IEncryptProvider encryptProvider, Protocol protocol = Protocol.Udp)
         {
             return protocol switch
             {
@@ -77,7 +77,7 @@ namespace CSDTP.Requests
             };
         }
 
-        public static Responder Create(Protocol protocol, int port, Type customPacketType)
+        public static Responder Create(int port, Type customPacketType, Protocol protocol = Protocol.Udp)
         {
             return protocol switch
             {

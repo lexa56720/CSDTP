@@ -29,7 +29,7 @@ namespace CSDTP.Requests
 
         protected bool isDisposed;
 
-        public Responder(IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
+        internal Responder(IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
             Receiver = receiver;
             RequestsQueue = new QueueProcessorAsync<(IPAddress, byte[])>(DataAppear, 32, TimeSpan.FromMilliseconds(10));
@@ -106,19 +106,20 @@ namespace CSDTP.Requests
         private async Task DataAppear((IPAddress from, byte[] data) request)
         {
             var (response, requestPacket) = HandleRequest(request.from, request.data);
-            await Reply((IRequestContainer)requestPacket.DataObj, requestPacket, response);
+            await Reply(requestPacket, response);
         }
-        public async Task<bool> ResponseManually<T>(IPacket requestPacket, T responseObj) where T : ISerializable<T>, new()
+        public async Task<bool> ResponseManually<T>(IPacket<IRequestContainer> requestPacket, T responseObj) where T : ISerializable<T>, new()
         {
-            if (requestPacket.DataObj is not IRequestContainer container)
+            var bytes = GetResponseBytes(requestPacket, responseObj);
+            return await Reply(requestPacket, bytes);
+        }
+        private async Task<bool> Reply(IPacket<IRequestContainer>? requestPacket, byte[]? response)
+        {
+            if (requestPacket == null)
                 return false;
-            var bytes = GetResponseBytes(container, responseObj);
-            return await Reply(container, requestPacket, bytes);
-        }
-        private async Task<bool> Reply(IRequestContainer requestContainer, IPacket requestPacket, byte[]? response)
-        {
-            if (requestContainer.RequestKind == RequesKind.Data)
+            if (requestPacket.Data.RequestKind == RequesKind.Data)
                 return true;
+
             var sender = GetSender(new IPEndPoint(requestPacket.Source, requestPacket.ReplyPort));
 
             if (response != null)
@@ -127,51 +128,49 @@ namespace CSDTP.Requests
         }
         protected abstract ISender GetSender(IPEndPoint endPoint);
 
-        protected (byte[]? response, IPacket request) HandleRequest(IPAddress from, byte[] data)
+        protected (byte[]? response, IPacket<IRequestContainer>? request) HandleRequest(IPAddress from, byte[] data)
         {
             var decryptedData = PacketManager.DecryptBytes(data);
-            var packet = PacketManager.GetResponsePacket(decryptedData);
-            packet.ReceiveTime = DateTime.UtcNow;
-            packet.Source = from;
+            var requestPacket = PacketManager.GetPacketFromBytes(decryptedData);
+            if (requestPacket == null)
+                return (null, null);
+            requestPacket.ReceiveTime = DateTime.UtcNow;
+            requestPacket.Source = from;
 
-            var container = (IRequestContainer)packet.DataObj;
 
-            if (container == null)
-                return (null, packet);
+            if (requestPacket.Data.RequestKind == RequesKind.Request)
+                return (GetResponse(requestPacket), requestPacket);
 
-            if (container.RequestKind == RequesKind.Request)
-                return (GetResponse(container, packet), packet);
+            if (DataHandlers.TryGetValue(requestPacket.Data.DataType, out var handler))
+                handler(requestPacket.Data.DataObj, requestPacket);
 
-            if (DataHandlers.TryGetValue(container.DataType, out var handler))
-                handler(container.DataObj, packet);
-
-            return (null, packet);
+            return (null, requestPacket);
         }
-        private byte[]? GetResponse(IRequestContainer container, IPacket packet)
+        private byte[]? GetResponse(IPacket<IRequestContainer> requestPacket)
         {
-            if (!RequestHandlers.TryGetValue((container.DataType, container.ResponseObjType), out var handler))
+            if (!RequestHandlers.TryGetValue((requestPacket.Data.DataType, requestPacket.Data.ResponseObjType), out var handler))
                 return null;
 
-            var responseData = handler(container.DataObj, packet);
+            var responseData = handler(requestPacket.Data.DataObj, requestPacket);
             if (responseData == null)
                 return null;
 
-            return GetResponseBytes(container, responseData);
+            return GetResponseBytes(requestPacket, responseData);
         }
 
-        private byte[] GetResponseBytes(IRequestContainer container, object responseObj)
+        private byte[]? GetResponseBytes(IPacket<IRequestContainer> requestPacket, object responseObj)
         {
-            var responseContainerType = typeof(RequestContainer<>).MakeGenericType(container.ResponseObjType);
+            var responseContainerType = typeof(RequestContainer<>).MakeGenericType(requestPacket.Data.ResponseObjType);
             var responseContainer = (IRequestContainer)CompiledActivator.CreateInstance(responseContainerType);
 
-            responseContainer.Id = container.Id;
+            responseContainer.Id = requestPacket.Data.Id;
             responseContainer.RequestKind = RequesKind.Response;
-            responseContainer.DataType = container.ResponseObjType;
+            responseContainer.DataType = requestPacket.Data.ResponseObjType;
             responseContainer.DataObj = responseObj;
 
-            var responsePacket = (IPacket)PackToPacket.Invoke(RequestManager, container.ResponseObjType, responseContainer, 0);
+            var responsePacket = (IPacket)PackToPacket.Invoke(RequestManager, requestPacket.Data.ResponseObjType, responseContainer, 0);
             var responseBytes = PacketManager.GetBytes(responsePacket);
-            var cryptedBytes = PacketManager.EncryptBytes(responsePacket, responseBytes.bytes, responseBytes.posToCrypt);
+            var cryptedBytes = PacketManager.EncryptBytes(responseBytes.bytes, responseBytes.posToCrypt, responsePacket, requestPacket);
 
             return cryptedBytes;
         }

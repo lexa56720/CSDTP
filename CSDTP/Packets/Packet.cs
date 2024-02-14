@@ -3,11 +3,11 @@ using System.Net;
 
 namespace CSDTP.Packets
 {
-    public class Packet<T> : IPacket where T : ISerializable<T>, new()
+    public class Packet<T> : IPacket<T> where T : ISerializable<T>, new()
     {
         public bool IsHasData;
 
-        public T? Data;
+        public T? Data { get; set; }
         public object? DataObj => Data;
 
         public Type TypeOfPacket { get; private set; }

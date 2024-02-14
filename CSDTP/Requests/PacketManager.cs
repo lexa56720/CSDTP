@@ -1,6 +1,7 @@
 ﻿using AutoSerializer;
 using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
+using CSDTP.Requests.RequestHeaders;
 using CSDTP.Utils;
 using CSDTP.Utils.Performance;
 
@@ -51,12 +52,12 @@ namespace CSDTP.Requests
             var bytes = ms.ToArray();
             return (bytes, posToCrypt);
         }
-        public byte[] EncryptBytes(IPacketInfo packetInfo, byte[] bytes, int cryptedPos)
+        public byte[] EncryptBytes( byte[] bytes, int cryptedPos, IPacketInfo responsePacket, IPacketInfo? requestPacket=null)
         {
             if (EncryptProvider == null)
                 return bytes;
 
-            var encrypter = EncryptProvider.GetEncrypter(packetInfo);
+            var encrypter = EncryptProvider.GetEncrypter(responsePacket,requestPacket);
             if (encrypter == null)
                 return bytes;
 
@@ -91,7 +92,7 @@ namespace CSDTP.Requests
             EncryptProvider.DisposeEncrypter(decrypter);
             return decryptedBytes;
         }
-        public IPacket GetResponsePacket(byte[] bytes)
+        public IPacket<IRequestContainer>? GetPacketFromBytes(byte[] bytes)
         {
             using var ms = new MemoryStream(bytes);
             using var reader = new BinaryReader(ms);
@@ -104,7 +105,7 @@ namespace CSDTP.Requests
             packet.DeserializeProtectedCustomData(reader);
             packet.DeserializeUnprotectedCustomData(reader);
 
-            return packet;
+            return packet as IPacket<IRequestContainer>;
         }
     }
 }
