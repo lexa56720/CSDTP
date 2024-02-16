@@ -55,23 +55,23 @@ namespace CSDTP.Requests
             Receiver.Dispose();
         }
 
-        public void Start()
+        public async Task Start()
         {
             if (IsRunning)
                 return;
 
-            Receiver.Start();
+            await Receiver.Start();
             RequestsQueue.Start();
             IsRunning = true;
         }
         protected virtual void Start(bool isRunning) { }
 
-        public void Stop()
+        public async Task Stop()
         {
             if (!IsRunning)
                 return;
 
-            Receiver.Stop();
+            await Receiver.Stop();
             RequestsQueue.Stop();
             IsRunning = false;
         }

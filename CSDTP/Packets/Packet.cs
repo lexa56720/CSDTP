@@ -3,11 +3,11 @@ using System.Net;
 
 namespace CSDTP.Packets
 {
-    public class Packet<T> : IPacket<T> where T : ISerializable<T>, new()
+    public class Packet<TData> : IPacket<TData> where TData : ISerializable<TData>, new()
     {
         public bool IsHasData;
 
-        public T? Data { get; set; }
+        public TData? Data { get; set; }
         public object? DataObj => Data;
 
         public Type TypeOfPacket { get; private set; }
@@ -20,7 +20,7 @@ namespace CSDTP.Packets
 
         public IPAddress? Source { get; set; }
 
-        public Packet(T data)
+        public Packet(TData data)
         {
             Data = data;
             IsHasData = true;
@@ -58,7 +58,7 @@ namespace CSDTP.Packets
             IsHasData = reader.ReadBoolean();
 
             if (IsHasData)
-                Data = T.Deserialize(reader);
+                Data = TData.Deserialize(reader);
         }
         public virtual void DeserializeUnprotectedCustomData(BinaryReader writer)
         {

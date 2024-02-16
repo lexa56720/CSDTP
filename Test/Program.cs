@@ -84,7 +84,7 @@ namespace Test
 
             //var port = PortUtils.GetFreePort() ;
             var port = 250;
-            var protocol = Protocol.Udp;
+            var protocol = Protocol.Http;
             using var responder = ResponderFactory.Create(crypter, typeof(ShitPacket<>), protocol);
             responder.RegisterRequestHandler<Message, Message>(Modify);
             responder.Start();
@@ -102,7 +102,7 @@ namespace Test
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
-                var result = await requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                var result =  requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
                                                                                .ContinueWith(e => Interlocked.Increment(ref count));
 
                 //Console.WriteLine(result.Text);

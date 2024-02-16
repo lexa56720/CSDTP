@@ -9,7 +9,7 @@ namespace CSDTP.Protocols.Http
     internal class HttpReceiver : BaseReceiver
     {
 
-        private HttpListener Listener;
+        private readonly HttpListener Listener;
 
         public override int Port => GetPortFromUrl(Listener.Prefixes.First());
         public HttpReceiver()
@@ -25,18 +25,18 @@ namespace CSDTP.Protocols.Http
             Listener.Prefixes.Add($"http://+:{port}/");
         }
 
-        public override void Stop()
+        public override async ValueTask Stop()
         {
-            base.Stop();
+            await base.Stop();
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                ModifyHttpSettings(Port, false);
+                await ModifyHttpSettings(Port, false);
         }
-        public override void Start()
+        public override async ValueTask Start()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                ModifyHttpSettings(Port, true);
+                await ModifyHttpSettings(Port, true);
             Listener.Start();
-            base.Start();
+            await base.Start();
         }
 
         protected override async Task ReceiveWork(CancellationToken token)
@@ -75,7 +75,7 @@ namespace CSDTP.Protocols.Http
         }
 
         [SupportedOSPlatform("windows")]
-        private void ModifyHttpSettings(int port, bool isAdd)
+        private async Task ModifyHttpSettings(int port, bool isAdd)
         {
             string everyone = new System.Security.Principal.SecurityIdentifier("S-1-1-0")
                                  .Translate(typeof(System.Security.Principal.NTAccount))
@@ -92,7 +92,8 @@ namespace CSDTP.Protocols.Http
                 UseShellExecute = true
             };
             var proc = Process.Start(procInfo);
-            proc.WaitForExitAsync();
+            if (proc != null)
+                await proc.WaitForExitAsync();
         }
         private int GetPortFromUrl(string url)
         {

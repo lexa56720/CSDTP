@@ -13,7 +13,7 @@ namespace CSDTP.Protocols.Http
             {
                 BaseAddress = new UriBuilder(Destination.ToString()).Uri,
                 DefaultRequestVersion = HttpVersion.Version30,
-                DefaultVersionPolicy = HttpVersionPolicy.RequestVersionExact
+                DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrLower,
             };
         }
 
@@ -30,12 +30,22 @@ namespace CSDTP.Protocols.Http
             if (!IsAvailable)
                 return false;
 
-            using var response = await HttpClient.SendAsync(new HttpRequestMessage()
+            try
             {
-                Content = new ByteArrayContent(bytes),
-                Method = HttpMethod.Post,
-            }, CancellationToken.Token);
-            return response.IsSuccessStatusCode;
+                using var response = await HttpClient.SendAsync(new HttpRequestMessage()
+                {
+                    Content = new ByteArrayContent(bytes),
+                    Method = HttpMethod.Post,
+
+                }, HttpCompletionOption.ResponseHeadersRead, CancellationToken.Token);
+                return response.IsSuccessStatusCode;
+            }
+
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
     }
+
 }

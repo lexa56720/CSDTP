@@ -26,15 +26,15 @@ namespace CSDTP.Requests
             Initialize(customPacketType, encryptProvider);
         }
 
-        private void Initialize(Type? customPacketType, IEncryptProvider? encryptProvider)
+        private async Task Initialize(Type? customPacketType, IEncryptProvider? encryptProvider)
         {
             PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
-            Receiver.DataAppear += ResponseAppear;
-            Receiver.Start();
             if (customPacketType != null)
                 RequestManager = new RequestManager(customPacketType);
             else
                 RequestManager = new RequestManager();
+            Receiver.DataAppear += ResponseAppear;
+            await Receiver.Start();
         }
 
         public void Dispose()
@@ -70,7 +70,7 @@ namespace CSDTP.Requests
             packet.ReceiveTime = DateTime.UtcNow;
             packet.Source = e.from;
 
-                RequestManager.ResponseAppear(packet);
+            RequestManager.ResponseAppear(packet);
         }
 
         public async Task<bool> SendAsync<TData>(TData data)

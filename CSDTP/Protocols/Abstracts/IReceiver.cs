@@ -8,7 +8,7 @@ namespace CSDTP.Protocols.Abstracts
         public bool IsReceiving { get; }
         public int Port { get; }
 
-        public void Start();
-        public void Stop();
+        public ValueTask Start();
+        public ValueTask Stop();
     }
 }

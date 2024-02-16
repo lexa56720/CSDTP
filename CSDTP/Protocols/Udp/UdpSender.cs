@@ -20,13 +20,22 @@ namespace CSDTP.Protocols.Udp
             if (!IsAvailable)
                 return false;
 
-            using var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
-            client.Connect(Destination);
-            if (!IsAvailable)
-                return false;
+            try
+            {
 
-            var sended = await client.SendAsync(bytes, bytes.Length);
-            return sended == bytes.Length;
+
+                using var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+                client.Connect(Destination);
+                if (!IsAvailable)
+                    return false;
+
+                var sended = await client.SendAsync(bytes, bytes.Length);
+                return sended == bytes.Length;
+            }
+            catch (OperationCanceledException)
+            {
+                return false;
+            }
         }
     }
 }

@@ -29,7 +29,7 @@ namespace CSDTP.Protocols.Abstracts
             }
         }
 
-        public virtual void Start()
+        public virtual async ValueTask Start()
         {
             if (IsReceiving)
                 return;
@@ -44,7 +44,7 @@ namespace CSDTP.Protocols.Abstracts
 
         protected abstract Task ReceiveWork(CancellationToken token);
 
-        public virtual void Stop()
+        public virtual async ValueTask Stop()
         {
             if (!IsReceiving)
                 return;
