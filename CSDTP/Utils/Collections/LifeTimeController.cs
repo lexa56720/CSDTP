@@ -1,94 +1,109 @@
-﻿namespace CSDTP.Utils.Collections
+﻿using System.Collections;
+using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
+using System.Threading;
+using System.Timers;
+
+namespace CSDTP.Utils.Collections
 {
-    internal class LifeTimeController<T> where T : IDisposable
+    internal class CustomTimer : System.Timers.Timer
     {
-
-        public List<KeyValuePair<T, DateTime>> Objects = new();
-
-        private object locker = new object();
-
-        private TimeSpan LifeTime { get; init; }
-
-        public bool IsRunning { get; private set; }
-
-        public LifeTimeController(TimeSpan lifeTime)
+        public CustomTimer()
         {
-            LifeTime = lifeTime;
         }
 
-        public void Start()
+        public CustomTimer(double interval) : base(interval)
         {
-            if (IsRunning)
-                return;
-
-            IsRunning = true;
-
-            if (LifeTime.TotalMilliseconds > 0)
-                Check();
         }
-        public void Stop()
+
+        public CustomTimer(TimeSpan interval) : base(interval)
         {
-            if (!IsRunning)
-                return;
+        }
 
-            IsRunning = false;
+        public object? Obj { get; set; }
+    }
 
-            if (LifeTime.TotalMilliseconds < 0)
-                Clear();
+    public class LifeTimeDictionary<TKey, TValue> where TKey : notnull
+    {
+        private ConcurrentDictionary<TKey, TValue> dict = new();
 
+        private ConcurrentDictionary<TKey, CustomTimer> timers = new();
+
+        public LifeTimeDictionary(Action<TValue?> itemRemoved)
+        {
+            RemoveCallback = (keyObj, e) =>
+            {
+                TryRemove((TKey)((CustomTimer)keyObj).Obj, out var result);
+                itemRemoved(result);
+            };
+        }
+
+        private readonly ElapsedEventHandler RemoveCallback;
+
+        public bool TryAdd(TKey key, TValue value, TimeSpan lifetime)
+        {
+            if (key == null || dict.ContainsKey(key))
+                return false;
+
+            var result = dict.TryAdd(key, value);
+
+            var timer = CreateTimer(lifetime,key);
+            timers.TryAdd(key, timer);
+            timer.Start();
+
+            return result;
+        }
+        public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
+        {
+            if (key != null && dict.TryGetValue(key, out value))
+                return true;
+
+            value = default;
+            return false;
+        }
+        public bool UpdateLifetime(TKey key, TimeSpan lifetime)
+        {
+            if (!dict.ContainsKey(key) || !timers.TryRemove(key, out var timer))
+                return false;
+
+            DisposeTimer(timer);
+
+            timer = CreateTimer(lifetime, key);
+            timers.TryAdd(key, timer);
+            timer.Start();
+
+            return true;
+        }
+        public bool TryRemove(TKey key, [MaybeNullWhen(false)] out TValue result)
+        {
+            if (timers.TryRemove(key, out var timer))
+                DisposeTimer(timer);
+            return dict.TryRemove(key, out result);
+        }
+
+        private void DisposeTimer(CustomTimer timer)
+        {
+            timer.Elapsed -= RemoveCallback;
+            timer.Stop();
+            timer.Dispose();         
+        }
+
+        private CustomTimer CreateTimer(TimeSpan period,TKey key)
+        {
+            var timer = new CustomTimer(period);
+
+            timer.Elapsed += RemoveCallback;
+            timer.AutoReset = false;
+            timer.Obj = key;
+            return timer;
         }
 
         public void Clear()
         {
-            for (int i = 0; i < Objects.Count; i++)
-                Objects[i].Key.Dispose();
-            Objects.Clear();
-        }
-
-        public void Add(T obj)
-        {
-            Objects.Add(new KeyValuePair<T, DateTime>(obj, DateTime.UtcNow.Add(LifeTime)));
-        }
-        public T? Get(Predicate<T> predicate)
-        {
-            lock (locker)
-            {
-                for (int i = 0; i < Objects.Count; i++)
-                {
-                    if (predicate(Objects[i].Key))
-                    {
-                        Objects[i] = new KeyValuePair<T, DateTime>(Objects[i].Key, DateTime.UtcNow.Add(LifeTime));
-                        return Objects[i].Key;
-                    }
-                }
-                return default;
-            }
-        }
-        public void Check()
-        {
-            Task.Run(async () =>
-            {
-                while (IsRunning)
-                {
-                    var nowTime = DateTime.UtcNow;
-                    var newObjects = new List<KeyValuePair<T, DateTime>>();
-                    lock (locker)
-                    {
-                        for (int i = 0; i < Objects.Count; i++)
-                        {
-                            if (Objects[i].Value > nowTime)
-                                newObjects.Add(Objects[i]);
-                            else
-                                Objects[i].Key.Dispose();
-                        }
-                        Objects = newObjects;
-                    }
-
-                    await Task.Delay(LifeTime);
-                }
-            });
-
-            Clear();
+            dict.Clear();
+            foreach (var timer in timers.Values)
+                DisposeTimer(timer);
+            timers.Clear();
         }
     }
 }

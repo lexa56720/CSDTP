@@ -64,7 +64,6 @@ namespace CSDTP.Requests
             RequestsQueue.Start();
             IsRunning = true;
         }
-        protected virtual void Start(bool isRunning) { }
 
         public async Task Stop()
         {
@@ -75,7 +74,6 @@ namespace CSDTP.Requests
             RequestsQueue.Stop();
             IsRunning = false;
         }
-        protected virtual void Stop(bool isRunning) { }
 
         public bool RegisterDataHandler<TData>(Action<TData, IPacketInfo> action)
         {

@@ -26,13 +26,5 @@ namespace CSDTP.Requests
             return SenderFactory.CreateSender(endPoint, Protocol.Udp);
         }
 
-
-        protected override void Start(bool isRunning)
-        {
-        }
-
-        protected override void Stop(bool isRunning)
-        {
-        }
     }
 }
