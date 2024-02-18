@@ -1,7 +1,4 @@
-﻿using AutoSerializer;
-using CSDTP.Requests.RequestHeaders;
-
-namespace CSDTP.Packets
+﻿namespace CSDTP.Packets
 {
     public interface IPacket<out T> : IPacket
     {

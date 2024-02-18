@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace CSDTP.Utils.Performance
+namespace PerformanceUtils.Performance
 {
     internal abstract class ArrayEqualityComparer<T> : IEqualityComparer<T[]>
     {

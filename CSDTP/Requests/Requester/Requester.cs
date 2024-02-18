@@ -1,5 +1,4 @@
 ﻿using CSDTP.Cryptography.Providers;
-using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
 using System.Net;

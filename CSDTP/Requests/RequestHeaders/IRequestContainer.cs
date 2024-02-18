@@ -1,6 +1,4 @@
-﻿using AutoSerializer;
-
-namespace CSDTP.Requests.RequestHeaders
+﻿namespace CSDTP.Requests.RequestHeaders
 {
     public enum RequesKind
     {

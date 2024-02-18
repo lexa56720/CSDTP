@@ -1,5 +1,4 @@
 ﻿using AutoSerializer;
-using CSDTP;
 using CSDTP.Cryptography.Algorithms;
 using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
@@ -84,7 +83,7 @@ namespace Test
 
             //var port = PortUtils.GetFreePort() ;
             var port = 250;
-            var protocol = Protocol.Http;
+            var protocol = Protocol.Udp;
             using var responder = ResponderFactory.Create(crypter, typeof(ShitPacket<>), protocol);
             responder.RegisterRequestHandler<Message, Message>(Modify);
             responder.Start();
@@ -95,6 +94,7 @@ namespace Test
 
             int count = 0;
             int globalCount = 1;
+            int sended = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();
 
             while (globalCount < 100000)
@@ -102,17 +102,18 @@ namespace Test
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
-                var result = await requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
-                                                                               .ContinueWith(e => Interlocked.Increment(ref count));
-
+                var result =requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                                                                            .ContinueWith(e => Interlocked.Increment(ref count));
+                Interlocked.Increment(ref sended);
                 //Console.WriteLine(result.Text);
                 if (stopwatch.ElapsedMilliseconds > globalCount * 1000)
                 {
-
                     Console.Clear();
-                    Console.WriteLine(1000 * (float)count / stopwatch.ElapsedMilliseconds + " " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
+                    Console.WriteLine(sended+" "+1000 * (float)count / stopwatch.ElapsedMilliseconds + " " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
+                    sended = 0;
                     count = 0;
                     counter = 0;
+                    Interlocked.Exchange(ref sended, 0);
                     stopwatch.Restart();
                     globalCount++;
                 }

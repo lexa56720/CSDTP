@@ -3,10 +3,10 @@ using CSDTP.Packets;
 using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
-using CSDTP.Utils.Collections;
-using CSDTP.Utils.Performance;
 using System.Net;
 using AutoSerializer;
+using PerformanceUtils.Performance;
+using PerformanceUtils.Collections;
 
 namespace CSDTP.Requests
 {

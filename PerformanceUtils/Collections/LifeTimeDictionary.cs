@@ -1,30 +1,30 @@
-﻿using System.Collections;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
 using System.Timers;
 
-namespace CSDTP.Utils.Collections
+namespace PerformanceUtils.Collections
 {
-    internal class CustomTimer : System.Timers.Timer
-    {
-        public CustomTimer()
-        {
-        }
 
-        public CustomTimer(double interval) : base(interval)
-        {
-        }
-
-        public CustomTimer(TimeSpan interval) : base(interval)
-        {
-        }
-
-        public object? Obj { get; set; }
-    }
 
     public class LifeTimeDictionary<TKey, TValue> where TKey : notnull
     {
+        private class CustomTimer : System.Timers.Timer
+        {
+            public CustomTimer()
+            {
+            }
+
+            public CustomTimer(double interval) : base(interval)
+            {
+            }
+
+            public CustomTimer(TimeSpan interval) : base(interval)
+            {
+            }
+
+            public object? Obj { get; set; }
+        }
+
         private ConcurrentDictionary<TKey, TValue> dict = new();
 
         private ConcurrentDictionary<TKey, CustomTimer> timers = new();
@@ -38,6 +38,15 @@ namespace CSDTP.Utils.Collections
             };
         }
 
+        public LifeTimeDictionary()
+        {
+            RemoveCallback = (keyObj, e) =>
+            {
+                TryRemove((TKey)((CustomTimer)keyObj).Obj, out var result);
+            };
+        }
+
+
         private readonly ElapsedEventHandler RemoveCallback;
 
         public bool TryAdd(TKey key, TValue value, TimeSpan lifetime)
@@ -47,7 +56,7 @@ namespace CSDTP.Utils.Collections
 
             var result = dict.TryAdd(key, value);
 
-            var timer = CreateTimer(lifetime,key);
+            var timer = CreateTimer(lifetime, key);
             timers.TryAdd(key, timer);
             timer.Start();
 
@@ -85,10 +94,9 @@ namespace CSDTP.Utils.Collections
         {
             timer.Elapsed -= RemoveCallback;
             timer.Stop();
-            timer.Dispose();         
+            timer.Dispose();
         }
-
-        private CustomTimer CreateTimer(TimeSpan period,TKey key)
+        private CustomTimer CreateTimer(TimeSpan period, TKey key)
         {
             var timer = new CustomTimer(period);
 

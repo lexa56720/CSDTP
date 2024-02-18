@@ -2,9 +2,9 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace CSDTP.Utils.Performance
+namespace PerformanceUtils.Performance
 {
-    internal class CompiledActivator
+    public static class CompiledActivator
     {
         private static ConcurrentDictionary<Type, Func<object>> Activators = new ConcurrentDictionary<Type, Func<object>>();
         private static Func<object> CreateCtor(Type type)

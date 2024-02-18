@@ -2,9 +2,9 @@
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace CSDTP.Utils.Performance
+namespace PerformanceUtils.Performance
 {
-    internal class CompiledMethod
+    public class CompiledMethod
     {
         private ConcurrentDictionary<Type[], Func<object, object[], object>> Methods = new(new TypesEqualityComparer());
 

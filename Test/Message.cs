@@ -1,5 +1,4 @@
 ﻿using AutoSerializer;
-using CSDTP;
 
 namespace Test
 {

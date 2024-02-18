@@ -1,7 +1,7 @@
 ﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Protocols;
 using CSDTP.Protocols.Abstracts;
-using CSDTP.Utils.Collections;
+using PerformanceUtils.Collections;
 using System.Net;
 
 namespace CSDTP.Requests

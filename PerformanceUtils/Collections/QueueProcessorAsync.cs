@@ -1,8 +1,8 @@
 ﻿using System.Collections.Concurrent;
 
-namespace CSDTP.Utils.Collections
+namespace PerformanceUtils.Collections
 {
-    internal class QueueProcessorAsync<T>
+    public class QueueProcessorAsync<T>
     {
         private ConcurrentQueue<(T item, DateTime addedTime)> Queue = new();
         private Func<T, Task> HandleItem;

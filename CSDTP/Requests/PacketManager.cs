@@ -2,8 +2,7 @@
 using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Requests.RequestHeaders;
-using CSDTP.Utils;
-using CSDTP.Utils.Performance;
+using PerformanceUtils.Performance;
 
 namespace CSDTP.Requests
 {

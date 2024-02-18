@@ -1,9 +1,9 @@
 ﻿using CSDTP.Packets;
 using CSDTP.Requests.RequestHeaders;
-using CSDTP.Utils.Performance;
 using System.Collections.Concurrent;
 using System.Reflection;
 using AutoSerializer;
+using PerformanceUtils.Performance;
 
 namespace CSDTP.Requests
 {

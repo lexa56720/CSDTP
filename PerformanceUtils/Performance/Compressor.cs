@@ -2,9 +2,9 @@
 using System.IO.Compression;
 using System.Text;
 
-namespace CSDTP.Utils.Performance
+namespace PerformanceUtils.Performance
 {
-    internal static class Compressor
+    public static class Compressor
     {
         private static ConcurrentDictionary<string, byte[]> StringBytes = new ConcurrentDictionary<string, byte[]>();
         private static ConcurrentDictionary<byte[], string> BytesString = new ConcurrentDictionary<byte[], string>(new BytesEqualityComparer());

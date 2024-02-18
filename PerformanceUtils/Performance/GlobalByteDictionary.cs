@@ -1,9 +1,9 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
-namespace CSDTP.Utils.Performance
+namespace PerformanceUtils.Performance
 {
-    internal class GlobalByteDictionary<T>
+    public class GlobalByteDictionary<T>
     {
 
         public static ConcurrentDictionary<byte[], T> Dictionary = new ConcurrentDictionary<byte[], T>(new ByteArrayComparer());
