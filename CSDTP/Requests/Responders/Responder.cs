@@ -129,17 +129,21 @@ namespace CSDTP.Requests
         protected (byte[]? response, IPacket<IRequestContainer>? request) HandleRequest(IPAddress from, byte[] data)
         {
             var decryptedData = PacketManager.DecryptBytes(data);
+            if (decryptedData.Length == 0)
+                return (null, null);
+
             var requestPacket = PacketManager.GetPacketFromBytes(decryptedData);
             if (requestPacket == null)
                 return (null, null);
+
             requestPacket.ReceiveTime = DateTime.UtcNow;
             requestPacket.Source = from;
 
 
-            if (requestPacket.Data.RequestKind == RequesKind.Request)
+            if (requestPacket.Data.RequestKind == RequesKind.Request && requestPacket.Data.ResponseObjType != null)
                 return (GetResponse(requestPacket), requestPacket);
 
-            if (DataHandlers.TryGetValue(requestPacket.Data.DataType, out var handler))
+            if (requestPacket.Data.RequestKind == RequesKind.Data && DataHandlers.TryGetValue(requestPacket.Data.DataType, out var handler))
                 handler(requestPacket.Data.DataObj, requestPacket);
 
             return (null, requestPacket);

@@ -63,9 +63,13 @@ namespace CSDTP.Requests
                 return;
 
             var decryptedData = PacketManager.DecryptBytes(e.data);
+            if(decryptedData.Length == 0) 
+                return;
+
             var packet = PacketManager.GetPacketFromBytes(decryptedData);
             if (packet == null)
                 return;
+
             packet.ReceiveTime = DateTime.UtcNow;
             packet.Source = e.from;
 

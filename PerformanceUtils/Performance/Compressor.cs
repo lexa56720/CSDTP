@@ -29,6 +29,7 @@ namespace PerformanceUtils.Performance
 
         public static string Decompress(byte[] bytes)
         {
+
             if (!BytesString.TryGetValue(bytes, out var result))
             {
                 using var input = new MemoryStream(bytes);

@@ -81,15 +81,21 @@ namespace CSDTP.Requests
             if (decrypter == null)
                 return bytes;
 
-            var decryptedData = decrypter.Decrypt(bytes, sizeof(int), cryptedLength);
+            try
+            {
+                var decryptedData = decrypter.Decrypt(bytes, sizeof(int), cryptedLength);
+                var decryptedBytes = new byte[decryptedData.Length + (bytes.Length - cryptedLength - sizeof(int))];
 
-            var decryptedBytes = new byte[decryptedData.Length + (bytes.Length - cryptedLength - sizeof(int))];
+                Array.Copy(decryptedData, decryptedBytes, decryptedData.Length);
+                Array.Copy(bytes, sizeof(int) + cryptedLength, decryptedBytes, decryptedData.Length, bytes.Length - cryptedLength - sizeof(int));
 
-            Array.Copy(decryptedData, decryptedBytes, decryptedData.Length);
-            Array.Copy(bytes, sizeof(int) + cryptedLength, decryptedBytes, decryptedData.Length, bytes.Length - cryptedLength - sizeof(int));
-
-            EncryptProvider.DisposeEncrypter(decrypter);
-            return decryptedBytes;
+                EncryptProvider.DisposeEncrypter(decrypter);
+                return decryptedBytes;
+            }
+            catch
+            {
+                return [];
+            }
         }
         public IPacket<IRequestContainer>? GetPacketFromBytes(byte[] bytes)
         {
@@ -98,6 +104,9 @@ namespace CSDTP.Requests
 
             var packetType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(),
                                                            b => Type.GetType(Compressor.Decompress(b)));
+            if(packetType == null) 
+                return null;
+
             var packet = (IPacket)CompiledActivator.CreateInstance(packetType);
 
             packet.DeserializePacket(reader);
