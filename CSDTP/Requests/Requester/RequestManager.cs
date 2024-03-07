@@ -54,7 +54,7 @@ namespace CSDTP.Requests
         }
 
         public RequestContainer<TData> PackToContainer<TData>(TData data)
-                                     where TData : ISerializable<TData>, new()
+                                       where TData : ISerializable<TData>, new()
         {
             return new RequestContainer<TData>(data, RequesKind.Data);
         }
@@ -88,13 +88,13 @@ namespace CSDTP.Requests
             var resultSource = new TaskCompletionSource<IPacket<IRequestContainer>>();
             return Requests.TryAdd(requestContainer.Id, resultSource);
         }
-        public async Task<IPacket<IRequestContainer>?> GetResponseAsync(IRequestContainer requestContainer, TimeSpan timeout)
+        public async Task<IPacket<IRequestContainer>?> GetResponseAsync(IRequestContainer requestContainer, TimeSpan timeout, CancellationToken token)
         {
             if (!Requests.TryGetValue(requestContainer.Id, out var response))
                 return null;
             try
             {
-                var result = await response.Task.WaitAsync(timeout);
+                var result = await response.Task.WaitAsync(timeout,token);
                 if (response.Task.IsCompletedSuccessfully && response.Task.Result is not null)
                     return result;
             }

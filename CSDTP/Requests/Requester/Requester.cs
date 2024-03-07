@@ -63,7 +63,7 @@ namespace CSDTP.Requests
                 return;
 
             var decryptedData = PacketManager.DecryptBytes(e.data);
-            if(decryptedData.Length == 0) 
+            if (decryptedData.Length == 0)
                 return;
 
             var packet = PacketManager.GetPacketFromBytes(decryptedData);
@@ -89,7 +89,7 @@ namespace CSDTP.Requests
 
             return await Sender.SendBytes(cryptedPacketBytes);
         }
-        public async Task<TResponse?> RequestAsync<TResponse, TRequest>(TRequest data, TimeSpan timeout)
+        public async Task<TResponse?> RequestAsync<TResponse, TRequest>(TRequest data, TimeSpan timeout, CancellationToken token)
                                       where TRequest : ISerializable<TRequest>, new()
                                       where TResponse : ISerializable<TResponse>, new()
         {
@@ -108,7 +108,7 @@ namespace CSDTP.Requests
                     return default;
 
                 await Sender.SendBytes(cryptedPacketBytes);
-                var responsePacket = await RequestManager.GetResponseAsync(container, timeout);
+                var responsePacket = await RequestManager.GetResponseAsync(container, timeout, token);
 
                 if (responsePacket == null)
                     return default;
@@ -119,6 +119,13 @@ namespace CSDTP.Requests
             {
                 return default;
             }
+        }
+
+        public async Task<TResponse?> RequestAsync<TResponse, TRequest>(TRequest data, TimeSpan timeout)
+                  where TRequest : ISerializable<TRequest>, new()
+                  where TResponse : ISerializable<TResponse>, new()
+        {
+            return await RequestAsync<TResponse, TRequest>(data, timeout, default);
         }
     }
 }

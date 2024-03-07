@@ -104,16 +104,16 @@ namespace Test
 
                 var result = await requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
                                                                             .ContinueWith(e => Interlocked.Increment(ref count));
-                Interlocked.Increment(ref sended);
+                //Interlocked.Increment(ref sended);
                 //Console.WriteLine(result.Text);
                 if (stopwatch.ElapsedMilliseconds > globalCount * 1000)
                 {
                     Console.Clear();
-                    Console.WriteLine(sended+" "+1000 * (float)count / stopwatch.ElapsedMilliseconds + " " + 1000 * (float)counter / stopwatch.ElapsedMilliseconds);
+                    Console.WriteLine(1000f * count / stopwatch.ElapsedMilliseconds + " " + 1000f * counter / stopwatch.ElapsedMilliseconds);
                     sended = 0;
                     count = 0;
                     counter = 0;
-                    Interlocked.Exchange(ref sended, 0);
+                  //  Interlocked.Exchange(ref sended, 0);
                     stopwatch.Restart();
                     globalCount++;
                 }
