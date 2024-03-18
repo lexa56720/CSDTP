@@ -25,9 +25,9 @@ namespace PerformanceUtils.Collections
             public object? Obj { get; set; }
         }
 
-        private ConcurrentDictionary<TKey, TValue> dict = new();
+        private readonly ConcurrentDictionary<TKey, TValue> Values = new();
 
-        private ConcurrentDictionary<TKey, CustomTimer> timers = new();
+        private readonly ConcurrentDictionary<TKey, CustomTimer> Timers = new();
 
         public LifeTimeDictionary(Action<TValue?> itemRemoved)
         {
@@ -51,20 +51,22 @@ namespace PerformanceUtils.Collections
 
         public bool TryAdd(TKey key, TValue value, TimeSpan lifetime)
         {
-            if (key == null || dict.ContainsKey(key))
+            if (key == null || Values.ContainsKey(key))
                 return false;
 
-            var result = dict.TryAdd(key, value);
+            var result = Values.TryAdd(key, value);
 
-            var timer = CreateTimer(lifetime, key);
-            timers.TryAdd(key, timer);
-            timer.Start();
-
+            if (lifetime != TimeSpan.MaxValue)
+            {
+                var timer = CreateTimer(lifetime, key);
+                Timers.TryAdd(key, timer);
+                timer.Start();
+            }
             return result;
         }
         public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value)
         {
-            if (key != null && dict.TryGetValue(key, out value))
+            if (key != null && Values.TryGetValue(key, out value))
                 return true;
 
             value = default;
@@ -72,22 +74,22 @@ namespace PerformanceUtils.Collections
         }
         public bool UpdateLifetime(TKey key, TimeSpan lifetime)
         {
-            if (!dict.ContainsKey(key) || !timers.TryRemove(key, out var timer))
+            if (!Values.ContainsKey(key) || !Timers.TryRemove(key, out var timer))
                 return false;
 
             DisposeTimer(timer);
 
             timer = CreateTimer(lifetime, key);
-            timers.TryAdd(key, timer);
+            Timers.TryAdd(key, timer);
             timer.Start();
 
             return true;
         }
         public bool TryRemove(TKey key, [MaybeNullWhen(false)] out TValue result)
         {
-            if (timers.TryRemove(key, out var timer))
+            if (Timers.TryRemove(key, out var timer))
                 DisposeTimer(timer);
-            return dict.TryRemove(key, out result);
+            return Values.TryRemove(key, out result);
         }
 
         private void DisposeTimer(CustomTimer timer)
@@ -108,10 +110,10 @@ namespace PerformanceUtils.Collections
 
         public void Clear()
         {
-            dict.Clear();
-            foreach (var timer in timers.Values)
+            Values.Clear();
+            foreach (var timer in Timers.Values)
                 DisposeTimer(timer);
-            timers.Clear();
+            Timers.Clear();
         }
     }
 }
