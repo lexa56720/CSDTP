@@ -53,11 +53,11 @@ namespace CSDTP.Protocols.Http
                         result.AsyncWaitHandle.WaitOne();
                     }
 
-                    Listener.Abort();
                 }, token);
             }
             catch (OperationCanceledException)
             {
+                Listener.Abort();
                 return;
             }
         }

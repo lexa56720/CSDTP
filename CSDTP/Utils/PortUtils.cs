@@ -5,6 +5,7 @@ namespace CSDTP.Utils
 {
     public static class PortUtils
     {
+        private readonly static Random Random = new Random();
         public static int GetFreePort(int startingPort = 1)
         {
             var properties = IPGlobalProperties.GetIPGlobalProperties();
@@ -24,13 +25,12 @@ namespace CSDTP.Utils
                                 .Where(n => n.Port >= startingPort)
                                 .Select(n => n.Port);
 
-            var port = Enumerable.Range(startingPort, ushort.MaxValue)
+            var ports = Enumerable.Range(startingPort, ushort.MaxValue)
                 .Where(i => !tcpConnectionPorts.Contains(i))
                 .Where(i => !tcpListenerPorts.Contains(i))
-                .Where(i => !udpListenerPorts.Contains(i))
-                .FirstOrDefault();
+                .Where(i => !udpListenerPorts.Contains(i));
 
-            return port;
+            return ports.ElementAt(Random.Next(0, ports.Count()));
         }
 
         public static async Task<bool> PortForward(int port, string mappingName, bool isTcp = false)

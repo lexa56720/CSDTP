@@ -79,10 +79,14 @@ namespace PerformanceUtils.Collections
 
             DisposeTimer(timer);
 
-            timer = CreateTimer(lifetime, key);
-            Timers.TryAdd(key, timer);
-            timer.Start();
 
+            if (lifetime != TimeSpan.MaxValue)
+            {
+                timer = CreateTimer(lifetime, key);
+                Timers.TryAdd(key, timer);
+                timer.Start();
+            }
+           
             return true;
         }
         public bool TryRemove(TKey key, [MaybeNullWhen(false)] out TValue result)
