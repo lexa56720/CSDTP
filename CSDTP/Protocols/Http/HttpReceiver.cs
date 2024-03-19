@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
+using System.Threading;
 
 namespace CSDTP.Protocols.Http
 {
@@ -41,36 +42,50 @@ namespace CSDTP.Protocols.Http
 
         protected override async Task ReceiveWork(CancellationToken token)
         {
-            while (IsReceiving)
+            try
             {
-                try
+                await Task.Run(() =>
                 {
-                    var data = await Listener.GetContextAsync().WaitAsync(token);
-                    token.ThrowIfCancellationRequested();
 
-                    var bytes = await ReadBytes(data, token);
+                    while (IsReceiving)
+                    {
+                        var result = Listener.BeginGetContext((o) => ListenerCallback(o, token), Listener);
+                        result.AsyncWaitHandle.WaitOne();
+                    }
 
-                    token.ThrowIfCancellationRequested();
-                    OnDataAppear(bytes, data.Request.RemoteEndPoint.Address);
-
-                    data.Response.StatusCode = (int)HttpStatusCode.OK;
-                    data.Response.Close();
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-
+                    Listener.Abort();
+                }, token);
             }
-            Listener.Stop();
-            Listener.Close();
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+        private void ListenerCallback(IAsyncResult result, CancellationToken token)
+        {
+
+            var listener = (HttpListener)result.AsyncState;
+
+            var data = listener.EndGetContext(result);
+
+            if (token.IsCancellationRequested)
+                return;
+
+            var bytes = ReadBytes(data, token);
+
+            if (token.IsCancellationRequested)
+                return;
+
+            OnDataAppear(bytes, data.Request.RemoteEndPoint.Address);
+
+            data.Response.StatusCode = (int)HttpStatusCode.OK;
+            data.Response.Close();
         }
 
-
-        private async Task<byte[]> ReadBytes(HttpListenerContext context, CancellationToken token)
+        private byte[] ReadBytes(HttpListenerContext context, CancellationToken token)
         {
             var bytes = new byte[context.Request.ContentLength64];
-            await context.Request.InputStream.ReadExactlyAsync(bytes, token);
+            context.Request.InputStream.ReadExactly(bytes);
             return bytes;
         }
 
