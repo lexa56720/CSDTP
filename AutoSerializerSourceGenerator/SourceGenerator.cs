@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -129,6 +130,10 @@ namespace SourceGenerator
             else if (prop.Type.TypeKind == TypeKind.Enum)
             {
                 src.AppendLine($@"writer.Write((int)(({type.Name})obj).{prop.Name});");
+            }
+            else if (prop.Type.TypeKind == TypeKind.Array && ((IArrayTypeSymbol)prop.Type).ElementType.Name== "Byte")
+            {
+                src.AppendLine($@"writer.WriteBytes((byte[])(({type.Name})obj).{prop.Name});");
             }
             else
             {
