@@ -25,7 +25,7 @@ namespace CSDTP.Utils
                                 .Where(n => n.Port >= startingPort)
                                 .Select(n => n.Port);
 
-            var ports = Enumerable.Range(startingPort, ushort.MaxValue)
+            var ports = Enumerable.Range(startingPort, ushort.MaxValue-startingPort)
                 .Where(i => !tcpConnectionPorts.Contains(i))
                 .Where(i => !tcpListenerPorts.Contains(i))
                 .Where(i => !udpListenerPorts.Contains(i));
