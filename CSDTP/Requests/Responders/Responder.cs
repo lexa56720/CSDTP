@@ -7,6 +7,7 @@ using System.Net;
 using AutoSerializer;
 using PerformanceUtils.Performance;
 using PerformanceUtils.Collections;
+using System.Net.Sockets;
 
 namespace CSDTP.Requests
 {
@@ -171,8 +172,10 @@ namespace CSDTP.Requests
             responseContainer.DataObj = responseObj;
 
             var responsePacket = (IPacket)PackToPacket.Invoke(RequestManager, requestPacket.Data.ResponseObjType, responseContainer, 0);
+            var encrypter = PacketManager.GetEncrypter(responsePacket, requestPacket);
             var responseBytes = PacketManager.GetBytes(responsePacket);
-            var cryptedBytes = PacketManager.EncryptBytes(responseBytes.bytes, responseBytes.posToCrypt, responsePacket, requestPacket);
+
+            var cryptedBytes = PacketManager.EncryptBytes(responseBytes.bytes, responseBytes.posToCrypt, encrypter);
 
             return cryptedBytes;
         }

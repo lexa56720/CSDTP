@@ -1,4 +1,5 @@
 ﻿using AutoSerializer;
+using CSDTP.Cryptography.Algorithms;
 using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Requests.RequestHeaders;
@@ -51,12 +52,14 @@ namespace CSDTP.Requests
             var bytes = ms.ToArray();
             return (bytes, posToCrypt);
         }
-        public byte[] EncryptBytes( byte[] bytes, int cryptedPos, IPacketInfo responsePacket, IPacketInfo? requestPacket=null)
+        public IEncrypter? GetEncrypter(IPacketInfo responsePacket, IPacketInfo? requestPacket = null)
         {
             if (EncryptProvider == null)
-                return bytes;
-
-            var encrypter = EncryptProvider.GetEncrypter(responsePacket,requestPacket);
+                return null;
+            return EncryptProvider.GetEncrypter(responsePacket, requestPacket);
+        }
+        public byte[] EncryptBytes(byte[] bytes, int cryptedPos, IEncrypter? encrypter)
+        {
             if (encrypter == null)
                 return bytes;
 
@@ -104,7 +107,7 @@ namespace CSDTP.Requests
 
             var packetType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(),
                                                            b => Type.GetType(Compressor.Decompress(b)));
-            if(packetType == null) 
+            if (packetType == null)
                 return null;
 
             var packet = (IPacket)CompiledActivator.CreateInstance(packetType);

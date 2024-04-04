@@ -3,6 +3,7 @@ using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
 using System.Net;
 using AutoSerializer;
+using CSDTP.Cryptography.Algorithms;
 
 namespace CSDTP.Requests
 {
@@ -82,10 +83,10 @@ namespace CSDTP.Requests
             var container = RequestManager.PackToContainer(data);
             container.RequestKind = RequesKind.Data;
             var packet = RequestManager.PackToPacket(container, -1);
-
+            var encrypter = PacketManager.GetEncrypter(packet);
             var packetBytes = PacketManager.GetBytes(packet);
 
-            var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, packet);
+            var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, encrypter);
 
             return await Sender.SendBytes(cryptedPacketBytes);
         }
@@ -99,10 +100,10 @@ namespace CSDTP.Requests
                 container.RequestKind = RequesKind.Request;
                 container.ResponseObjType = typeof(TResponse);
                 var packet = RequestManager.PackToPacket(container, ReplyPort);
-
+                var encrypter = PacketManager.GetEncrypter(packet);
                 var packetBytes = PacketManager.GetBytes(packet);
 
-                var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, packet);
+                var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, encrypter);
 
                 if (!RequestManager.AddRequest(container))
                     return default;
