@@ -103,7 +103,7 @@ namespace CSDTP.Requests
                 throw;
             }
             finally
-            {
+            {       
                 Requests.TryRemove(requestContainer.Id, out _);
             }
             return null;
@@ -111,8 +111,8 @@ namespace CSDTP.Requests
 
         public void ResponseAppear(IPacket<IRequestContainer> packet)
         {
-            if (Requests.TryGetValue(packet.Data.Id, out var request))
-                request.SetResult(packet);
+            if (Requests.TryGetValue(packet.Data.Id, out var request) && !request.Task.IsCompleted)
+                request.TrySetResult(packet);
         }
     }
 }
