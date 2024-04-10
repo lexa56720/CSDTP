@@ -13,12 +13,12 @@ namespace SourceGeneratorSourceGenerator
     {
         public SourceGenerator()
         {
-#if DEBUG
-            if (!Debugger.IsAttached)
-            {
-                Debugger.Launch();
-            }
-#endif
+//#if DEBUG
+//            if (!Debugger.IsAttached)
+//            {
+//                Debugger.Launch();
+//            }
+//#endif
         }
 
         public void Execute(GeneratorExecutionContext context)

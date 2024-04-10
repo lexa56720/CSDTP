@@ -12,7 +12,7 @@ namespace CSDTP.Cryptography.Algorithms
 
         public AesEncrypter()
         {
-            using var aes = Aes.Create();
+            using var aes =Aes.Create();
             Key = new byte[aes.Key.Length];
             aes.Key.CopyTo(Key, 0);
         }
