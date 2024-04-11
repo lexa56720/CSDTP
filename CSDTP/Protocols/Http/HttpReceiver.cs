@@ -49,7 +49,7 @@ namespace CSDTP.Protocols.Http
                     await Listener.GetContextAsync().ContinueWith(HandleRequest, token, token);
                 }
             }
-            catch (OperationCanceledException)
+            catch
             {
             }
             Listener.Stop();
@@ -74,7 +74,8 @@ namespace CSDTP.Protocols.Http
         private async Task<byte[]> ReadBytes(HttpListenerContext context, CancellationToken token)
         {
             var bytes = new byte[context.Request.ContentLength64];
-            await context.Request.InputStream.ReadAsync(bytes, token);
+            var ms = new MemoryStream(bytes,true);
+            await context.Request.InputStream.CopyToAsync(ms,token);
             return bytes;
         }
 

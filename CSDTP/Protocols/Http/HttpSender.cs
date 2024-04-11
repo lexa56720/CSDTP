@@ -50,7 +50,7 @@ namespace CSDTP.Protocols.Http
                     HttpClient.Dispose();
                 return response.IsSuccessStatusCode;
             }
-            catch (OperationCanceledException)
+            catch
             {
                 return false;
             }
