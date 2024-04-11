@@ -1,5 +1,7 @@
 ﻿using Open.Nat;
+using System.Diagnostics;
 using System.Net.NetworkInformation;
+using System.Runtime.Versioning;
 
 namespace CSDTP.Utils
 {
@@ -49,6 +51,27 @@ namespace CSDTP.Utils
 
         }
 
+        [SupportedOSPlatform("windows")]
+        public static async Task ModifyHttpSettings(int port, bool isAdd)
+        {
+            string everyone = new System.Security.Principal.SecurityIdentifier("S-1-1-0")
+                                 .Translate(typeof(System.Security.Principal.NTAccount))
+                                 .ToString();
+            var command = isAdd ? "add" : "delete";
+            string parameter = $"http {command} urlacl url=http://+:{port}/ user=\\{everyone}";
+
+            var procInfo = new ProcessStartInfo("netsh", parameter)
+            {
+                Verb = "runas",
+                RedirectStandardOutput = false,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                UseShellExecute = true
+            };
+            var proc = Process.Start(procInfo);
+            if (proc != null)
+                await proc.WaitForExitAsync();
+        }
 
         public static async Task<bool> PortBackward(int port, bool isTcp = false)
         {
@@ -65,7 +88,6 @@ namespace CSDTP.Utils
             {
                 return false;
             }
-
         }
     }
 }
