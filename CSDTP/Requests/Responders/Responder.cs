@@ -11,9 +11,11 @@ using System.Net.Sockets;
 
 namespace CSDTP.Requests
 {
-    public abstract class Responder : IDisposable
+    public class Responder : IDisposable
     {
-        public abstract Protocol Protocol { get; }
+        public required Protocol Protocol { get; init; }
+
+        private readonly TimeSpan SenderLifeTime = TimeSpan.FromSeconds(60);
         public int ListenPort => Receiver.Port;
         public bool IsRunning { get; private set; }
 
@@ -24,12 +26,12 @@ namespace CSDTP.Requests
 
         private readonly Dictionary<Type, Action<object, IPacketInfo>> DataHandlers = new();
         private readonly Dictionary<(Type, Type), Func<object, IPacketInfo, object?>> RequestHandlers = new();
+        private LifeTimeDictionary<IPEndPoint, ISender> Senders { get; set; } = new((s) => s?.Dispose());
 
         private readonly CompiledMethod PackToPacket = new(typeof(RequestManager).GetMethod(nameof(RequestManager.PackToPacket)));
         private QueueProcessor<(IPAddress, byte[])> RequestsQueue { get; set; }
 
-        protected bool isDisposed;
-
+        private bool IsDisposed;
         internal Responder(IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
             Receiver = receiver;
@@ -41,19 +43,14 @@ namespace CSDTP.Requests
                 RequestManager = new RequestManager();
             Receiver.DataAppear += (o, e) => RequestsQueue.Add(e);
         }
-        public void Dispose()
+        public async void Dispose()
         {
-            if (!isDisposed)
-            {
-                Dispose(disposing: true);
-                isDisposed = true;
-            }
-            GC.SuppressFinalize(this);
-        }
-        protected virtual void Dispose(bool disposing)
-        {
-            Stop();
+            if (IsDisposed)
+                return;
+            IsDisposed = true;
+            await Stop();
             Receiver.Dispose();
+            Senders.Clear();
         }
 
         public async Task Start()
@@ -125,8 +122,26 @@ namespace CSDTP.Requests
                 return await sender.SendBytes(response);
             return false;
         }
-        protected abstract ISender GetSender(IPEndPoint endPoint);
-
+        private ISender GetSender(IPEndPoint endPoint)
+        {
+            if (!Senders.TryGetValue(endPoint, out var sender))
+            {
+                sender = SenderFactory.CreateSender(endPoint, Protocol);
+                Senders.TryAdd(endPoint, sender, SenderLifeTime);
+            }
+            else
+            {
+                if (!sender.IsAvailable)
+                {
+                    Senders.TryRemove(endPoint, out _);
+                    sender = SenderFactory.CreateSender(endPoint, Protocol);
+                    Senders.TryAdd(endPoint, sender, SenderLifeTime);
+                }
+                else
+                    Senders.UpdateLifetime(endPoint, SenderLifeTime);
+            }
+            return sender;
+        }
         protected (byte[]? response, IPacket<IRequestContainer>? request) HandleRequest(IPAddress from, byte[] data)
         {
             var decryptedData = PacketManager.DecryptBytes(data);

@@ -19,22 +19,23 @@ namespace CSDTP.Requests
 
         private bool isDisposed;
 
-        internal Requester(ISender sender, IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
+        private Requester(ISender sender, IReceiver receiver)
         {
             Sender = sender;
             Receiver = receiver;
-            Initialize(customPacketType, encryptProvider);
         }
 
-        private async Task Initialize(Type? customPacketType, IEncryptProvider? encryptProvider)
+        internal static async Task<Requester> Initialize(ISender sender, IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
-            PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
+            var requester = new Requester(sender, receiver);
+            requester.PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
             if (customPacketType != null)
-                RequestManager = new RequestManager(customPacketType);
+                requester.RequestManager = new RequestManager(customPacketType);
             else
-                RequestManager = new RequestManager();
-            Receiver.DataAppear += ResponseAppear;
-            await Receiver.Start();
+                requester.RequestManager = new RequestManager();
+            requester.Receiver.DataAppear += requester.ResponseAppear;
+            await requester.Receiver.Start();
+            return requester;
         }
 
         public void Dispose()

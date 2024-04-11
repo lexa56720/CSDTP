@@ -89,7 +89,7 @@ namespace Test
             responder.Start();
 
 
-            using var requester = RequesterFactory.Create(new IPEndPoint(IPAddress.Loopback, responder.ListenPort), port, crypter, typeof(ShitPacket<>), protocol);
+            using var requester = await RequesterFactory.Create(new IPEndPoint(IPAddress.Loopback, responder.ListenPort), port, crypter, typeof(ShitPacket<>), protocol);
 
 
             int count = 0;
