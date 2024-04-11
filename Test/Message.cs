@@ -3,7 +3,6 @@ using AutoSerializerSourceGenerator;
 
 namespace Test
 {
-    [ManualSerialization]
     internal class Message : ISerializable<Message>
     {
         public string Text { get; set; }

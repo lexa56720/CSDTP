@@ -102,7 +102,7 @@ namespace Test
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
-                var result =  requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                var result = await requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
                                                                             .ContinueWith(e => Interlocked.Increment(ref count));
                 //Interlocked.Increment(ref sended);
                 //Console.WriteLine(result.Text);

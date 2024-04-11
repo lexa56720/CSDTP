@@ -2,7 +2,7 @@
 
 namespace PerformanceUtils.Collections
 {
-    public class QueueProcessorAsync<T>
+    public class QueueProcessor<T>
     {
         private ConcurrentQueue<(T item, DateTime addedTime)> Queue = new();
         private Func<T, Task> HandleItem;
@@ -11,7 +11,7 @@ namespace PerformanceUtils.Collections
 
         public bool IsRunning { get; private set; }
 
-        public QueueProcessorAsync(Func<T, Task> handleItem, int sequentialLimit, TimeSpan timeout)
+        public QueueProcessor(Func<T, Task> handleItem, int sequentialLimit, TimeSpan timeout)
         {
             HandleItem = handleItem;
             SequentialLimit = sequentialLimit;
@@ -50,25 +50,12 @@ namespace PerformanceUtils.Collections
         {
             while (IsRunning)
             {
-                int count = Queue.Count;
-                if (count > 0 && count < SequentialLimit)
+                var count = Queue.Count;
+                for (int i = 0; i < count; i++)
                 {
-                    await Parallel.ForAsync(0, count, async (i, c) =>
-                      {
-                          if (Queue.TryDequeue(out var data))
-                              await HandleItem(data.item);
-                      });
+                    if (Queue.TryDequeue(out var data))
+                        await HandleItem(data.item);
                 }
-                else if (count > 0)
-                {
-                    for (int i = 0; i < count; i++)
-                    {
-                        if (Queue.TryDequeue(out var data))
-                            await HandleItem(data.item);
-                    }
-                }
-                else
-                    await Task.Delay(Timeout);
             }
         }
     }

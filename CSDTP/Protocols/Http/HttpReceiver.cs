@@ -44,48 +44,37 @@ namespace CSDTP.Protocols.Http
         {
             try
             {
-                await Task.Run(() =>
+                while (IsReceiving)
                 {
-
-                    while (IsReceiving)
-                    {
-                        var result = Listener.BeginGetContext((o) => ListenerCallback(o, token), Listener);
-                        result.AsyncWaitHandle.WaitOne();
-                    }
-
-                }, token);
+                    await Listener.GetContextAsync().ContinueWith(HandleRequest, token, token);
+                }
             }
             catch (OperationCanceledException)
             {
-                Listener.Abort();
-                return;
             }
+            Listener.Stop();
         }
-        private void ListenerCallback(IAsyncResult result, CancellationToken token)
+        private async Task HandleRequest(Task<HttpListenerContext> contextTask, object? state)
         {
-
-            var listener = (HttpListener)result.AsyncState;
-
-            var data = listener.EndGetContext(result);
-
-            if (token.IsCancellationRequested)
+            if (state is not CancellationToken token)
                 return;
 
-            var bytes = ReadBytes(data, token);
+            var data = await contextTask.WaitAsync(token);
 
-            if (token.IsCancellationRequested)
-                return;
+            var bytes = await ReadBytes(data, token);
 
-            OnDataAppear(bytes, data.Request.RemoteEndPoint.Address);
-
+            token.ThrowIfCancellationRequested();
+            var address = data.Request.RemoteEndPoint.Address.GetAddressBytes();
             data.Response.StatusCode = (int)HttpStatusCode.OK;
             data.Response.Close();
+
+            OnDataAppear(bytes, new IPAddress(address));
         }
 
-        private byte[] ReadBytes(HttpListenerContext context, CancellationToken token)
+        private async Task<byte[]> ReadBytes(HttpListenerContext context, CancellationToken token)
         {
             var bytes = new byte[context.Request.ContentLength64];
-            context.Request.InputStream.ReadExactly(bytes);
+            await context.Request.InputStream.ReadAsync(bytes, token);
             return bytes;
         }
 

@@ -26,14 +26,14 @@ namespace CSDTP.Requests
         private readonly Dictionary<(Type, Type), Func<object, IPacketInfo, object?>> RequestHandlers = new();
 
         private readonly CompiledMethod PackToPacket = new(typeof(RequestManager).GetMethod(nameof(RequestManager.PackToPacket)));
-        private QueueProcessorAsync<(IPAddress, byte[])> RequestsQueue { get; set; }
+        private QueueProcessor<(IPAddress, byte[])> RequestsQueue { get; set; }
 
         protected bool isDisposed;
 
         internal Responder(IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
             Receiver = receiver;
-            RequestsQueue = new QueueProcessorAsync<(IPAddress, byte[])>(DataAppear, 32, TimeSpan.FromMilliseconds(10));
+            RequestsQueue = new QueueProcessor<(IPAddress, byte[])>(DataAppear, 32, TimeSpan.FromMilliseconds(10));
             PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
             if (customPacketType != null)
                 RequestManager = new RequestManager(customPacketType);

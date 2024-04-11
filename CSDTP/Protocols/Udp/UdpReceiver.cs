@@ -1,6 +1,7 @@
 ﻿using CSDTP.Protocols.Abstracts;
 using System.Net;
 using System.Net.Sockets;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CSDTP.Protocols.Udp
 {
@@ -30,19 +31,24 @@ namespace CSDTP.Protocols.Udp
             {
                 try
                 {
-                    var data = await Listener.ReceiveAsync(token);
-
-                    token.ThrowIfCancellationRequested();
-
-                    OnDataAppear(data.Buffer, data.RemoteEndPoint.Address);
-
+                    await Listener.ReceiveAsync(token).AsTask().ContinueWith(HandleData, token, token);
                 }
                 catch (OperationCanceledException)
                 {
                     return;
                 }
-
             }
+        }
+
+        private async Task HandleData(Task<UdpReceiveResult> udpResultTask, object? state)
+        {
+            if (state is not CancellationToken token)
+                return;
+
+            var data = await udpResultTask;
+            token.ThrowIfCancellationRequested();
+
+            OnDataAppear(data.Buffer, data.RemoteEndPoint.Address);
         }
     }
 }

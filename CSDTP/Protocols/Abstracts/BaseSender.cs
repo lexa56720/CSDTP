@@ -13,6 +13,7 @@ namespace CSDTP.Protocols.Abstracts
             Destination = destination;
         }
 
+        protected bool IsDisposed { get; set; }
         public abstract void Dispose();
 
         public abstract Task<bool> SendBytes(byte[] bytes);

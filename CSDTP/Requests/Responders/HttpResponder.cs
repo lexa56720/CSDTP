@@ -10,7 +10,7 @@ namespace CSDTP.Requests
     {
         private LifeTimeDictionary<IPEndPoint, ISender> Senders { get; set; } = new((s) => s?.Dispose());
 
-        private readonly TimeSpan SenderLifeTime = TimeSpan.FromSeconds(10);
+        private readonly TimeSpan SenderLifeTime = TimeSpan.FromSeconds(60);
         public override Protocol Protocol => Protocol.Http;
 
         internal HttpResponder(IEncryptProvider? encryptProvider = null, Type? customPacketType = null) :

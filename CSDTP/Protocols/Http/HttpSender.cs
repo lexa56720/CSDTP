@@ -9,6 +9,8 @@ namespace CSDTP.Protocols.Http
         private CancellationTokenSource CancellationToken { get; set; } = new CancellationTokenSource();
 
         private bool IsSending { get; set; }
+
+
         public HttpSender(IPEndPoint destination) : base(destination)
         {
             HttpClient = new HttpClient
@@ -21,7 +23,10 @@ namespace CSDTP.Protocols.Http
 
         public override void Dispose()
         {
+            if (IsDisposed)
+                return;
             IsAvailable = false;
+            IsDisposed = true;
             CancellationToken.Cancel();
             CancellationToken.Dispose();
             if (!IsSending)
@@ -39,15 +44,12 @@ namespace CSDTP.Protocols.Http
                 {
                     Content = new ByteArrayContent(bytes),
                     Method = HttpMethod.Post,
-
                 }, HttpCompletionOption.ResponseHeadersRead, CancellationToken.Token);
                 IsSending = false;
                 if (!IsAvailable)
                     HttpClient.Dispose();
-
                 return response.IsSuccessStatusCode;
             }
-
             catch (OperationCanceledException)
             {
                 return false;
