@@ -10,14 +10,16 @@ namespace CSDTP.Protocols.Udp
     {
         private UdpClient Listener;
 
-        public override int Port => ((IPEndPoint)Listener.Client.LocalEndPoint).Port;
+        public override int Port { get; }
         public UdpReceiver(int port) : base(port)
         {
             Listener = new UdpClient(port);
+            Port = ((IPEndPoint)Listener.Client.LocalEndPoint).Port;
         }
         public UdpReceiver() : base()
         {
             Listener = new UdpClient(0);
+            Port = ((IPEndPoint)Listener.Client.LocalEndPoint).Port;
         }
         public override void Dispose()
         {
@@ -55,12 +57,9 @@ namespace CSDTP.Protocols.Udp
                 }
                 catch (OperationCanceledException)
                 {
-                    return;
-                }
-                finally
-                {
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                         await PortUtils.PortBackward(Port, "csdtp", false);
+                    return;
                 }
             }
         }
