@@ -31,19 +31,20 @@ namespace CSDTP.Protocols.Http
 
         public override async ValueTask Stop()
         {
-            await base.Stop();
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 await PortUtils.ModifyHttpSettings(Port, false);
-                await PortUtils.PortForward(Port, "csdtp", true);
+                await PortUtils.PortBackward(Port, "csdtp", true);
+
             }
+            await base.Stop();
         }
         public override async ValueTask Start()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 await PortUtils.ModifyHttpSettings(Port, true);
-                await PortUtils.PortBackward(Port, "csdtp",true);
+                await PortUtils.PortForward(Port, "csdtp", true);
             }
             Listener.Start();
             await base.Start();

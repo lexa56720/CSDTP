@@ -60,7 +60,7 @@ namespace CSDTP.Utils
                 var discoverer = new NatDiscoverer();
                 var cts = new CancellationTokenSource(10000);
                 var device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
-                var mapping = new Mapping(isTcp ? Protocol.Tcp : Protocol.Udp,(int)TimeSpan.FromDays(2).TotalSeconds, port, port, mappingName);
+                var mapping = new Mapping(isTcp ? Protocol.Tcp : Protocol.Udp, port, port, mappingName);
                 await device.CreatePortMapAsync(mapping);
             }
             catch
