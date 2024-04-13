@@ -1,7 +1,8 @@
 ﻿using CSDTP.Protocols.Abstracts;
+using CSDTP.Utils;
 using System.Net;
 using System.Net.Sockets;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Runtime.InteropServices;
 
 namespace CSDTP.Protocols.Udp
 {
@@ -23,7 +24,26 @@ namespace CSDTP.Protocols.Udp
             base.Dispose();
             Listener.Dispose();
         }
+        public override async ValueTask Start()
+        {
+            if (IsReceiving)
+                return;
 
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                await PortUtils.PortForward(Port, "csdtp", false);
+
+            await base.Start();
+        }
+        public override async ValueTask Stop()
+        {
+            if (!IsReceiving)
+                return;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                await PortUtils.PortBackward(Port, "csdtp", false);
+
+            await base.Stop();
+        }
 
         protected override async Task ReceiveWork(CancellationToken token)
         {
@@ -36,6 +56,11 @@ namespace CSDTP.Protocols.Udp
                 catch (OperationCanceledException)
                 {
                     return;
+                }
+                finally
+                {
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                        await PortUtils.PortBackward(Port, "csdtp", false);
                 }
             }
         }

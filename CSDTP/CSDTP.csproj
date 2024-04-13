@@ -7,12 +7,32 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Lib\FirewallAPI.dll" />
+    <None Remove="Lib\FirewallExecutor.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Lib\FirewallAPI.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Lib\FirewallExecutor.exe">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\AutoSerializerSourceGenerator\AutoSerializerSourceGenerator.csproj" />
     <ProjectReference Include="..\AutoSerializer\AutoSerializer.csproj" />
     <ProjectReference Include="..\PerformanceUtils\PerformanceUtils.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="FirewallManager">
+      <HintPath>Lib\FirewallManager.dll</HintPath>
+    </Reference>
+    <Reference Include="FirewallTypes">
+      <HintPath>Lib\FirewallTypes.dll</HintPath>
+    </Reference>
     <Reference Include="Open.Nat">
       <HintPath>Lib\Open.Nat.dll</HintPath>
     </Reference>

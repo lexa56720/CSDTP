@@ -1,6 +1,8 @@
-﻿using Open.Nat;
+﻿using FirewallTypes;
+using Open.Nat;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 
 namespace CSDTP.Utils
@@ -24,7 +26,7 @@ namespace CSDTP.Utils
                                 .Where(n => n.Port >= startingPort)
                                 .Select(n => n.Port);
 
-            var ports = Enumerable.Range(startingPort, ushort.MaxValue-startingPort)
+            var ports = Enumerable.Range(startingPort, ushort.MaxValue - startingPort)
                                   .Where(i => !tcpConnectionPorts.Contains(i))
                                   .Where(i => !tcpListenerPorts.Contains(i))
                                   .Where(i => !udpListenerPorts.Contains(i));
@@ -34,21 +36,38 @@ namespace CSDTP.Utils
 
         public static async Task<bool> PortForward(int port, string mappingName, bool isTcp = false)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                try
+                {
+                    await FirewallManager.Firewall.AddRule(new Rule()
+                    {
+                        Action = FirewallAction.Allow,
+                        Name = port + "_" + mappingName,
+                        IsEnabled = true,
+                        Direction = Direction.In,
+                        IsPrivate = true,
+                        IsPublic = true,
+                        Port = port,
+                        Protocol = isTcp ? FirewallProtocol.TCP : FirewallProtocol.UDP
+                    });
+                }
+                catch
+                {
+                    return false;
+                }
             try
             {
                 var discoverer = new NatDiscoverer();
                 var cts = new CancellationTokenSource(10000);
                 var device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
 
-
                 await device.CreatePortMapAsync(new Mapping(isTcp ? Protocol.Tcp : Protocol.Udp, port, port, mappingName));
-                return true;
             }
             catch
             {
                 return false;
             }
-
+            return true;
         }
 
         [SupportedOSPlatform("windows")]
@@ -73,14 +92,23 @@ namespace CSDTP.Utils
                 await proc.WaitForExitAsync();
         }
 
-        public static async Task<bool> PortBackward(int port, bool isTcp = false)
+        public static async Task<bool> PortBackward(int port, string name, bool isTcp = false)
         {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                try
+                {
+
+                    await FirewallManager.Firewall.RemoveRule(port + "_" + name);
+                }
+                catch
+                {
+                    return false;
+                }
             try
             {
                 var discoverer = new NatDiscoverer();
                 var cts = new CancellationTokenSource(10000);
                 var device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
-
                 await device.DeletePortMapAsync(await device.GetSpecificMappingAsync(isTcp ? Protocol.Tcp : Protocol.Udp, port));
                 return true;
             }

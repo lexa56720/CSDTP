@@ -37,6 +37,8 @@ namespace Test
         public static Protocol protocol = Protocol.Udp;
         static async Task Main(string[] args)
         {
+
+
             Serializer.SerializerProvider = new SerializerProvider();
             // var rp = new RequesterPipeline(new IPEndPoint(IPAddress.Loopback, 666), 667, Protocol.Udp);
             //await rp.SendRequestAsync<Message, Message>(new Message("HI"), TimeSpan.FromSeconds(5));
@@ -113,7 +115,7 @@ namespace Test
                     sended = 0;
                     count = 0;
                     counter = 0;
-                  //  Interlocked.Exchange(ref sended, 0);
+                    //  Interlocked.Exchange(ref sended, 0);
                     stopwatch.Restart();
                     globalCount++;
                 }

@@ -10,9 +10,7 @@
   <ItemGroup>
 	  <ProjectReference Include="..\AutoSerializer\AutoSerializer.csproj" />
 	  <ProjectReference Include="..\CSDTP\CSDTP.csproj" />
-	  <ProjectReference Include="..\AutoSerializerSourceGenerator\AutoSerializerSourceGenerator.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+	  <ProjectReference Include="..\AutoSerializerSourceGenerator\AutoSerializerSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

@@ -19,9 +19,9 @@ namespace CSDTP.Protocols.Abstracts
         {
         }
 
-        public virtual void Dispose()
+        public virtual async void Dispose()
         {
-            Stop();
+            await Stop();
             if (TokenSource != null)
             {
                 TokenSource.Cancel();

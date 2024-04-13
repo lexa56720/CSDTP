@@ -9,9 +9,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Test", "Test\Test.csproj", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PerformanceUtils", "PerformanceUtils\PerformanceUtils.csproj", "{38E5EF44-3413-477B-A6A1-0E7E4F85ACDB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoSerializer", "AutoSerializer\AutoSerializer.csproj", "{E7D4A657-48B7-4605-BC09-08E64D5CCD9C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoSerializer", "AutoSerializer\AutoSerializer.csproj", "{E7D4A657-48B7-4605-BC09-08E64D5CCD9C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoSerializerSourceGenerator", "AutoSerializerSourceGenerator\AutoSerializerSourceGenerator.csproj", "{5E253DCC-254E-4E41-BC9C-AE9D06B0A5B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoSerializerSourceGenerator", "AutoSerializerSourceGenerator\AutoSerializerSourceGenerator.csproj", "{5E253DCC-254E-4E41-BC9C-AE9D06B0A5B4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
