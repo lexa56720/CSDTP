@@ -1,4 +1,5 @@
 ﻿using CSDTP.Protocols.Abstracts;
+using CSDTP.Utils;
 using System.Diagnostics;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -12,17 +13,19 @@ namespace CSDTP.Protocols.Http
 
         private readonly HttpListener Listener;
 
-        public override int Port => GetPortFromUrl(Listener.Prefixes.First());
+        public override int Port { get; }
         public HttpReceiver()
         {
             Listener = new HttpListener();
-            Listener.Prefixes.Add($"http://+:{Utils.PortUtils.GetFreePort(666)}/");
+            Port = PortUtils.GetFreePort(6660);
+            Listener.Prefixes.Add($"http://+:{Port}/");
 
         }
 
         public HttpReceiver(int port) : base(port)
         {
             Listener = new HttpListener();
+            Port = port;
             Listener.Prefixes.Add($"http://+:{port}/");
         }
 
@@ -30,12 +33,18 @@ namespace CSDTP.Protocols.Http
         {
             await base.Stop();
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                await Utils.PortUtils.ModifyHttpSettings(Port, false);
+            {
+                await PortUtils.ModifyHttpSettings(Port, false);
+                await PortUtils.PortForward(Port, "csdtp", true);
+            }
         }
         public override async ValueTask Start()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                await Utils.PortUtils.ModifyHttpSettings(Port, true);
+            {
+                await PortUtils.ModifyHttpSettings(Port, true);
+                await PortUtils.PortBackward(Port, "csdtp",true);
+            }
             Listener.Start();
             await base.Start();
         }

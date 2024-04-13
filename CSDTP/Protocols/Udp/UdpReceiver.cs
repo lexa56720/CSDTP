@@ -70,7 +70,8 @@ namespace CSDTP.Protocols.Udp
                 return;
 
             var data = await udpResultTask;
-            token.ThrowIfCancellationRequested();
+            if (token.IsCancellationRequested)
+                return;
 
             OnDataAppear(data.Buffer, data.RemoteEndPoint.Address);
         }
