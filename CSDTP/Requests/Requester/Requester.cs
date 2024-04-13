@@ -9,32 +9,32 @@ namespace CSDTP.Requests
 {
     public class Requester : IDisposable
     {
-        public int ReplyPort => Receiver.Port;
+        public int ReplyPort => Communicator.ListenPort;
 
-        private readonly ISender Sender;
-        private readonly IReceiver Receiver;
+        private readonly ICommunicator Communicator;
 
         private RequestManager RequestManager = null!;
         private PacketManager PacketManager = null!;
 
+        private IPEndPoint Destination;
+
         private bool isDisposed;
 
-        private Requester(ISender sender, IReceiver receiver)
+        private Requester(ICommunicator communicator)
         {
-            Sender = sender;
-            Receiver = receiver;
+            Communicator = communicator;
+            Communicator.DataAppear +=ResponseAppear;
         }
 
-        internal static async Task<Requester> Initialize(ISender sender, IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
+        internal static async Task<Requester> Initialize(ICommunicator communicator, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
-            var requester = new Requester(sender, receiver);
+            var requester = new Requester(communicator);
             requester.PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
             if (customPacketType != null)
                 requester.RequestManager = new RequestManager(customPacketType);
             else
                 requester.RequestManager = new RequestManager();
-            requester.Receiver.DataAppear += requester.ResponseAppear;
-            await requester.Receiver.Start();
+            await requester.Communicator.Start();
             return requester;
         }
 
@@ -50,16 +50,15 @@ namespace CSDTP.Requests
             {
                 if (disposing)
                 {
-                    Sender.Dispose();
-                    Receiver.DataAppear -= ResponseAppear;
-                    Receiver.Dispose();
+                    Communicator.DataAppear -= ResponseAppear;
+                    Communicator.Dispose();
                     PacketManager?.Dispose();
                 }
                 isDisposed = true;
             }
         }
 
-        private void ResponseAppear(object? sender, (IPAddress from, byte[] data) e)
+        private void ResponseAppear(object? sender, (IPAddress from, byte[] data, Func<byte[],Task<bool>> reply) e)
         {
             if (e.data.Length == 0)
                 return;
@@ -89,7 +88,7 @@ namespace CSDTP.Requests
 
             var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, encrypter);
 
-            return await Sender.SendBytes(cryptedPacketBytes);
+            return await Communicator.SendBytes(cryptedPacketBytes);
         }
         public async Task<TResponse?> RequestAsync<TResponse, TRequest>(TRequest data, TimeSpan timeout, CancellationToken token)
                                       where TRequest : ISerializable<TRequest>, new()
@@ -109,7 +108,7 @@ namespace CSDTP.Requests
                 if (!RequestManager.AddRequest(container))
                     return default;
 
-                await Sender.SendBytes(cryptedPacketBytes);
+                await Communicator.SendBytes(cryptedPacketBytes);
                 var responsePacket = await RequestManager.GetResponseAsync(container, timeout, token);
 
                 if (responsePacket == null)

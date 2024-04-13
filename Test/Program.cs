@@ -34,7 +34,7 @@ namespace Test
 
     internal class Program
     {
-        public static Protocol protocol = Protocol.Udp;
+        public static Protocol protocol = Protocol.Http;
         static async Task Main(string[] args)
         {
 
@@ -85,7 +85,7 @@ namespace Test
 
             //var port = PortUtils.GetFreePort() ;
             var port = 250;
-            var protocol = Protocol.Http;
+            var protocol = Protocol.Udp;
             using var responder = ResponderFactory.Create(crypter, typeof(ShitPacket<>), protocol);
             responder.RegisterRequestHandler<Message, Message>(Modify);
             responder.Start();
@@ -99,7 +99,7 @@ namespace Test
             int sended = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            while (globalCount < 100000)
+            while (globalCount < 50)
             {
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));

@@ -16,41 +16,41 @@ namespace CSDTP.Requests
         public required Protocol Protocol { get; init; }
 
         private readonly TimeSpan SenderLifeTime = TimeSpan.FromSeconds(60);
-        public int ListenPort => Receiver.Port;
+        public int ListenPort => Communicator.ListenPort;
         public bool IsRunning { get; private set; }
 
-        private readonly IReceiver Receiver;
+        private readonly ICommunicator Communicator;
 
         private readonly PacketManager PacketManager;
         private readonly RequestManager RequestManager;
 
-        private readonly Dictionary<Type, Action<object, IPacketInfo>> DataHandlers = new();
-        private readonly Dictionary<(Type, Type), Func<object, IPacketInfo, object?>> RequestHandlers = new();
-        private LifeTimeDictionary<IPEndPoint, ISender> Senders { get; set; } = new((s) => s?.Dispose());
+        private readonly Dictionary<Type, Action<object, IPacketInfo, Func<byte[], Task<bool>>>> DataHandlers = new();
+        private readonly Dictionary<(Type, Type), Func<object, IPacketInfo, Func<byte[], Task<bool>>, object?>> RequestHandlers = new();
 
         private readonly CompiledMethod PackToPacket = new(typeof(RequestManager).GetMethod(nameof(RequestManager.PackToPacket)));
-        private QueueProcessor<(IPAddress, byte[])> RequestsQueue { get; set; }
+        private QueueProcessor<(IPAddress, byte[], Func<byte[], Task<bool>>)> RequestsQueue { get; set; }
 
         private bool IsDisposed;
-        internal Responder(IReceiver receiver, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
+        internal Responder(ICommunicator communicator, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
-            Receiver = receiver;
-            RequestsQueue = new QueueProcessor<(IPAddress, byte[])>(DataAppear, 32, TimeSpan.FromMilliseconds(10));
+            Communicator = communicator;
+            RequestsQueue = new QueueProcessor<(IPAddress, byte[], Func<byte[], Task<bool>>)>(DataAppear, 32, TimeSpan.FromMilliseconds(10));
             PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
             if (customPacketType != null)
                 RequestManager = new RequestManager(customPacketType);
             else
                 RequestManager = new RequestManager();
-            Receiver.DataAppear += (o, e) => RequestsQueue.Add(e);
+            Communicator.DataAppear += (o, e) => RequestsQueue.Add(e);
         }
+
+
         public async void Dispose()
         {
             if (IsDisposed)
                 return;
             IsDisposed = true;
             await Stop();
-            Receiver.Dispose();
-            Senders.Clear();
+            Communicator.Dispose();
         }
 
         public async Task Start()
@@ -58,7 +58,7 @@ namespace CSDTP.Requests
             if (IsRunning)
                 return;
 
-            await Receiver.Start();
+            await Communicator.Start();
             RequestsQueue.Start();
             IsRunning = true;
         }
@@ -68,7 +68,7 @@ namespace CSDTP.Requests
             if (!IsRunning)
                 return;
 
-            await Receiver.Stop();
+            await Communicator.Stop();
             RequestsQueue.Stop();
             IsRunning = false;
         }
@@ -77,72 +77,64 @@ namespace CSDTP.Requests
         {
             return DataHandlers.TryAdd(typeof(TData),
                                        new Action<object,
-                                       IPacketInfo>((o, i) => action((TData)o, i)));
-        }
-        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, IPacketInfo, TResponse?> action)
-                    where TResponse : ISerializable<TResponse>, new()
-        {
-            return RequestHandlers.TryAdd((typeof(TRequest),
-                                          typeof(TResponse)),
-                                          new Func<object, IPacketInfo, object?>((o, i) => action((TRequest)o, i)));
+                                       IPacketInfo, Func<byte[], Task<bool>>>((o, i, f) => action((TData)o, i)));
         }
         public bool RegisterDataHandler<TData>(Action<TData> action)
         {
             return DataHandlers.TryAdd(typeof(TData),
-                                       new Action<object, IPacketInfo>((o, i) => action((TData)o)));
+                                       new Action<object, IPacketInfo, Func<byte[], Task<bool>>>((o, i, f) => action((TData)o)));
         }
         public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, TResponse?> action)
                     where TResponse : ISerializable<TResponse>, new()
         {
             return RequestHandlers.TryAdd((typeof(TRequest),
                                           typeof(TResponse)),
-                                          new Func<object, IPacketInfo, object?>((o, i) => action((TRequest)o)));
+                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, object?>((o, i, f) => action((TRequest)o)));
+        }
+        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, IPacketInfo, TResponse?> action)
+            where TResponse : ISerializable<TResponse>, new()
+        {
+            return RequestHandlers.TryAdd((typeof(TRequest),
+                                          typeof(TResponse)),
+                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, object?>((o, i, f) => action((TRequest)o, i)));
+        }
+        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, IPacketInfo, Func<byte[], Task<bool>>, TResponse?> action)
+                    where TResponse : ISerializable<TResponse>, new()
+        {
+            return RequestHandlers.TryAdd((typeof(TRequest),
+                                          typeof(TResponse)),
+                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, object?>((o, i, f) => action((TRequest)o, i, f)));
         }
 
-        private async Task DataAppear((IPAddress from, byte[] data) request)
+
+        private async Task DataAppear((IPAddress from, byte[] data, Func<byte[], Task<bool>> replyFunc) request)
         {
-            var (response, requestPacket) = HandleRequest(request.from, request.data);
-            await Reply(requestPacket, response);
+            var (response, requestPacket) = HandleRequest(request.from, request.data, request.replyFunc);
+            await Reply(requestPacket, response, request.replyFunc);
         }
-        public async Task<bool> ResponseManually<T>(IPacket<IRequestContainer> requestPacket, T responseObj) where T : ISerializable<T>, new()
+        public async Task<bool> ResponseManually<T>(IPacket<IRequestContainer> requestPacket, T responseObj, Func<byte[], Task<bool>> reply)
+            where T : ISerializable<T>, new()
         {
             var bytes = GetResponseBytes(requestPacket, responseObj);
-            return await Reply(requestPacket, bytes);
+            return await Reply(requestPacket, bytes, reply);
         }
-        private async Task<bool> Reply(IPacket<IRequestContainer>? requestPacket, byte[]? response)
+        private async Task<bool> Reply(IPacket<IRequestContainer>? requestPacket, byte[]? response, Func<byte[], Task<bool>> replyFunc)
         {
             if (requestPacket == null)
                 return false;
             if (requestPacket.Data.RequestKind == RequesKind.Data)
                 return true;
 
-            var sender = GetSender(new IPEndPoint(requestPacket.Source, requestPacket.ReplyPort));
-
             if (response != null)
-                return await sender.SendBytes(response);
-            return false;
-        }
-        private ISender GetSender(IPEndPoint endPoint)
-        {
-            if (!Senders.TryGetValue(endPoint, out var sender))
-            {
-                sender = SenderFactory.CreateSender(endPoint, Protocol);
-                Senders.TryAdd(endPoint, sender, SenderLifeTime);
-            }
+                return await replyFunc(response);
             else
             {
-                if (!sender.IsAvailable)
-                {
-                    Senders.TryRemove(endPoint, out _);
-                    sender = SenderFactory.CreateSender(endPoint, Protocol);
-                    Senders.TryAdd(endPoint, sender, SenderLifeTime);
-                }
-                else
-                    Senders.UpdateLifetime(endPoint, SenderLifeTime);
+                await replyFunc([]);
+                return false;
             }
-            return sender;
         }
-        protected (byte[]? response, IPacket<IRequestContainer>? request) HandleRequest(IPAddress from, byte[] data)
+
+        protected (byte[]? response, IPacket<IRequestContainer>? request) HandleRequest(IPAddress from, byte[] data, Func<byte[], Task<bool>> replyFunc)
         {
             var decryptedData = PacketManager.DecryptBytes(data);
             if (decryptedData.Length == 0)
@@ -157,19 +149,19 @@ namespace CSDTP.Requests
 
 
             if (requestPacket.Data.RequestKind == RequesKind.Request && requestPacket.Data.ResponseObjType != null)
-                return (GetResponse(requestPacket), requestPacket);
+                return (GetResponse(requestPacket, replyFunc), requestPacket);
 
             if (requestPacket.Data.RequestKind == RequesKind.Data && DataHandlers.TryGetValue(requestPacket.Data.DataType, out var handler))
-                handler(requestPacket.Data.DataObj, requestPacket);
+                handler(requestPacket.Data.DataObj, requestPacket, replyFunc);
 
             return (null, requestPacket);
         }
-        private byte[]? GetResponse(IPacket<IRequestContainer> requestPacket)
+        private byte[]? GetResponse(IPacket<IRequestContainer> requestPacket, Func<byte[], Task<bool>> replyFunc)
         {
             if (!RequestHandlers.TryGetValue((requestPacket.Data.DataType, requestPacket.Data.ResponseObjType), out var handler))
                 return null;
 
-            var responseData = handler(requestPacket.Data.DataObj, requestPacket);
+            var responseData = handler(requestPacket.Data.DataObj, requestPacket, replyFunc);
             if (responseData == null)
                 return null;
 

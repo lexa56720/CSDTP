@@ -1,5 +1,4 @@
-﻿using FirewallTypes;
-using Open.Nat;
+﻿using Open.Nat;
 using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
@@ -36,25 +35,6 @@ namespace CSDTP.Utils
 
         public static async Task<bool> PortForward(int port, string mappingName, bool isTcp = false)
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                try
-                {
-                    await FirewallManager.Firewall.AddRule(new Rule()
-                    {
-                        Action = FirewallAction.Allow,
-                        Name = port + "_" + mappingName,
-                        IsEnabled = true,
-                        Direction = Direction.In,
-                        IsPrivate = true,
-                        IsPublic = true,
-                        Port = port,
-                        Protocol = isTcp ? FirewallProtocol.TCP : FirewallProtocol.UDP
-                    });
-                }
-                catch
-                {
-                    return false;
-                }
             try
             {
                 var discoverer = new NatDiscoverer();
@@ -93,17 +73,7 @@ namespace CSDTP.Utils
         }
 
         public static async Task<bool> PortBackward(int port, string name, bool isTcp = false)
-        {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                try
-                {
-
-                    await FirewallManager.Firewall.RemoveRule(port + "_" + name);
-                }
-                catch
-                {
-                    return false;
-                }
+        { 
             try
             {
                 var discoverer = new NatDiscoverer();

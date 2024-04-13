@@ -8,25 +8,22 @@ namespace CSDTP.Requests
     {
         public static async Task<Requester> Create(IPEndPoint destination, int replyPort, Protocol protocol = Protocol.Udp)
         {
-            return await Requester.Initialize(SenderFactory.CreateSender(destination, protocol), ReceiverFactory.CreateReceiver(replyPort, protocol));
+            return await Requester.Initialize(CommunicatorFactory.Create(destination, replyPort, protocol));
         }
         public static async Task<Requester> Create(IPEndPoint destination, int replyPort, IEncryptProvider encryptProvider, Protocol protocol = Protocol.Udp)
         {
-            return await Requester.Initialize(SenderFactory.CreateSender(destination, protocol),
-                                 ReceiverFactory.CreateReceiver(replyPort, protocol),
-                                 encryptProvider);
+            return await Requester.Initialize(CommunicatorFactory.Create(destination, replyPort, protocol),
+                                              encryptProvider);
         }
         public static async Task<Requester> Create(IPEndPoint destination, int replyPort, Type customPacketType, Protocol protocol = Protocol.Udp)
         {
-            return await Requester.Initialize(SenderFactory.CreateSender(destination, protocol),
-                                 ReceiverFactory.CreateReceiver(replyPort, protocol),
-                                 null, customPacketType);
+            return await Requester.Initialize(CommunicatorFactory.Create(destination, replyPort, protocol),
+                                              null, customPacketType);
         }
 
         public static async Task<Requester> Create(IPEndPoint destination, int replyPort, IEncryptProvider encryptProvider, Type customPacketType, Protocol protocol = Protocol.Udp)
         {
-            return await Requester.Initialize(SenderFactory.CreateSender(destination, protocol),
-                                 ReceiverFactory.CreateReceiver(replyPort, protocol),
+            return await Requester.Initialize(CommunicatorFactory.Create(destination, replyPort, protocol),
                                  encryptProvider,
                                  customPacketType);
         }
@@ -35,27 +32,22 @@ namespace CSDTP.Requests
 
         public static async Task<Requester> Create(IPEndPoint destination, Protocol protocol = Protocol.Udp)
         {
-            return await Requester.Initialize(SenderFactory.CreateSender(destination, protocol), ReceiverFactory.CreateReceiver(protocol));
+            return await Requester.Initialize(CommunicatorFactory.Create(destination, protocol));
         }
         public static async Task<Requester> Create(IPEndPoint destination, IEncryptProvider encryptProvider, Protocol protocol = Protocol.Udp)
         {
-            return await Requester.Initialize(SenderFactory.CreateSender(destination, protocol),
-                                 ReceiverFactory.CreateReceiver(protocol),
-                                 encryptProvider);
+            return await Requester.Initialize(CommunicatorFactory.Create(destination, protocol), encryptProvider);
         }
         public static async Task<Requester> Create(IPEndPoint destination, Type customPacketType, Protocol protocol = Protocol.Udp)
         {
-            return await Requester.Initialize(SenderFactory.CreateSender(destination, protocol),
-                                 ReceiverFactory.CreateReceiver(protocol),
-                                 null, customPacketType);
+            return await Requester.Initialize(CommunicatorFactory.Create(destination, protocol),
+                                              null, customPacketType);
         }
 
         public static async Task<Requester> Create(IPEndPoint destination, IEncryptProvider encryptProvider, Type customPacketType, Protocol protocol = Protocol.Udp)
         {
-            return await Requester.Initialize(SenderFactory.CreateSender(destination, protocol),
-                                 ReceiverFactory.CreateReceiver(protocol),
-                                 encryptProvider,
-                                 customPacketType);
+            return await Requester.Initialize(CommunicatorFactory.Create(destination, protocol),
+                                              encryptProvider, customPacketType);
         }
     }
 }
