@@ -103,7 +103,7 @@ namespace CSDTP.Protocols.Communicators
 
         private async Task ReceiveWork(CancellationToken token)
         {
-            while (IsReceiving)
+            while (IsReceiving && !IsDisposed)
             {
                 try
                 {

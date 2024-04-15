@@ -89,7 +89,7 @@ namespace Test
 
             //var port = PortUtils.GetFreePort() ;
             var port = 250;
-            var protocol = Protocol.Udp;
+            var protocol = Protocol.Http;
             using var responder = ResponderFactory.Create(crypter, typeof(ShitPacket<>), protocol);
             responder.RegisterRequestHandler<Message, Message>(Modify);
             responder.Start();

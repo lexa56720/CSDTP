@@ -49,7 +49,7 @@ namespace CSDTP.Protocols.Communicators
             if (IsDisposed)
                 return;
             IsDisposed = true;
-            IsAvailable = false;
+            IsAvailable = false;    
             if (!IsSending)
                 Client.Dispose();
             Stop();
@@ -117,11 +117,12 @@ namespace CSDTP.Protocols.Communicators
 
         private async Task ReceiveWork(CancellationToken token)
         {
-            while (IsReceiving)
+            while (IsReceiving && !IsDisposed)
             {
                 try
                 {
                     var context = await Listener.GetContextAsync().WaitAsync(token);
+                    token.ThrowIfCancellationRequested();
                     await HandleRequest(context, token);
                 }
                 catch
