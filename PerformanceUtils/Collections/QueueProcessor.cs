@@ -51,11 +51,12 @@ namespace PerformanceUtils.Collections
             while (IsRunning)
             {
                 var count = Queue.Count;
-                for (int i = 0; i < count; i++)
-                {
-                    if (Queue.TryDequeue(out var data))
-                        await HandleItem(data.item);
-                }
+                await Parallel.ForAsync(0, count, (i, c) =>
+                   {
+                       if (Queue.TryDequeue(out var data))
+                            HandleItem(data.item);
+                       return ValueTask.CompletedTask;
+                   });
             }
         }
     }

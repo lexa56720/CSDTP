@@ -77,6 +77,10 @@ namespace Test
             //}
         }
 
+        public static void a(ValueTask<bool> d)
+        {
+
+        }
         public static async Task TestPost()
         {
             //using var crypter = new RsaEncrypter();
@@ -99,19 +103,20 @@ namespace Test
             int sended = 0;
             Stopwatch stopwatch = Stopwatch.StartNew();
 
-            while (globalCount < 50)
+            while (globalCount < 10)
             {
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
-                var result = await requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                var result = requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
                                                                             .ContinueWith(e => Interlocked.Increment(ref count));
                 //Interlocked.Increment(ref sended);
                 //Console.WriteLine(result.Text);
-                if (stopwatch.ElapsedMilliseconds > globalCount * 1000)
+                if (stopwatch.ElapsedMilliseconds > globalCount * 500)
                 {
-                    Console.Clear();
+                    // Console.Clear();
                     Console.WriteLine(1000f * count / stopwatch.ElapsedMilliseconds + " " + 1000f * counter / stopwatch.ElapsedMilliseconds);
+
                     sended = 0;
                     count = 0;
                     counter = 0;
@@ -124,10 +129,11 @@ namespace Test
         }
 
         static int counter = 0;
-        static Message Modify(Message msg, IPacketInfo info)
+        static async Task<Message> Modify(Message msg, IPacketInfo info)
         {
             //Thread.Sleep(100);
-            return new Message(msg.Text + " " + Interlocked.Increment(ref counter));
+            var response = new Message(msg.Text + " " + Interlocked.Increment(ref counter));
+            return response;
         }
         static void ModifyGet(Message msg, IPacketInfo info)
         {

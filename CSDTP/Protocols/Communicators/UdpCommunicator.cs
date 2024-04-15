@@ -1,5 +1,4 @@
-﻿using CSDTP.Protocols.Abstracts;
-using CSDTP.Utils;
+﻿using CSDTP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Protocols.Udp
+namespace CSDTP.Protocols.Communicators
 {
     internal class UdpCommunicator : ICommunicator
     {
@@ -22,7 +21,7 @@ namespace CSDTP.Protocols.Udp
         private readonly UdpClient Client;
         private CancellationTokenSource? TokenSource;
 
-        public event EventHandler<(IPAddress from, byte[] data, Func<byte[], Task<bool>> reply)>? DataAppear;
+        public event EventHandler<DataInfo>? DataAppear;
         public IPEndPoint? Destination { get; }
         private bool IsDisposed;
         private bool IsSending;
@@ -53,6 +52,8 @@ namespace CSDTP.Protocols.Udp
         }
         public async Task<bool> SendBytes(byte[] bytes)
         {
+            if (Destination == null)
+                return false;
             return await SendBytes(bytes, Destination);
         }
         public async Task<bool> SendBytes(byte[] bytes, IPEndPoint destionation)
@@ -106,7 +107,8 @@ namespace CSDTP.Protocols.Udp
             {
                 try
                 {
-                    await Client.ReceiveAsync(token).AsTask().ContinueWith(HandleData, token, token);
+                    var data = await Client.ReceiveAsync(token);
+                    OnDataAppear(data.Buffer, data.RemoteEndPoint);
                 }
                 catch (OperationCanceledException)
                 {
@@ -117,17 +119,7 @@ namespace CSDTP.Protocols.Udp
             if (IsDisposed)
                 Client.Dispose();
         }
-        private async Task HandleData(Task<UdpReceiveResult> udpResultTask, object? state)
-        {
-            if (state is not CancellationToken token)
-                return;
 
-            var data = await udpResultTask;
-            if (token.IsCancellationRequested)
-                return;
-
-            OnDataAppear(data.Buffer, data.RemoteEndPoint);
-        }
 
         private void OnDataAppear(byte[] buffer, IPEndPoint endPoint)
         {
@@ -137,7 +129,7 @@ namespace CSDTP.Protocols.Udp
                     return await SendBytes(data, endPoint);
                 return false;
             };
-            DataAppear?.Invoke(this, (endPoint.Address, buffer, replyFunc));
+            DataAppear?.Invoke(this, new DataInfo(endPoint.Address, buffer, replyFunc));
         }
     }
 }

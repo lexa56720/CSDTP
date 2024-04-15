@@ -1,5 +1,4 @@
-﻿using CSDTP.Protocols.Abstracts;
-using CSDTP.Utils;
+﻿using CSDTP.Utils;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Protocols.Http
+namespace CSDTP.Protocols.Communicators
 {
     internal class HttpCommunicator : ICommunicator
     {
@@ -19,7 +18,7 @@ namespace CSDTP.Protocols.Http
 
         public int ListenPort { get; }
 
-        public event EventHandler<(IPAddress from, byte[] data, Func<byte[], Task<bool>> reply)>? DataAppear;
+        public event EventHandler<DataInfo>? DataAppear;
 
         private readonly HttpListener Listener;
         private readonly HttpClient Client;
@@ -57,7 +56,7 @@ namespace CSDTP.Protocols.Http
         }
         public async Task<bool> SendBytes(byte[] bytes)
         {
-            if(Destination==null)
+            if (Destination == null)
                 return false;
             return await SendBytes(bytes, Destination);
         }
@@ -122,7 +121,8 @@ namespace CSDTP.Protocols.Http
             {
                 try
                 {
-                    await Listener.GetContextAsync().ContinueWith(HandleRequest, token, token);
+                    var context = await Listener.GetContextAsync().WaitAsync(token);
+                    await HandleRequest(context, token);
                 }
                 catch
                 {
@@ -140,22 +140,17 @@ namespace CSDTP.Protocols.Http
             }
         }
 
-        private async Task HandleRequest(Task<HttpListenerContext> contextTask, object? state)
+        private async Task HandleRequest(HttpListenerContext context, CancellationToken token)
         {
-            if (state is not CancellationToken token)
-                return;
-
-            var data = await contextTask.WaitAsync(token);
-
-            var bytes = await ReadBytes(data, token);
+            var bytes = await ReadBytes(context, token);
 
             token.ThrowIfCancellationRequested();
-            OnDataAppear(bytes, data.Request.RemoteEndPoint, data);
+            OnDataAppear(bytes, context.Request.RemoteEndPoint, context);
         }
         private async Task<byte[]> ReadBytes(HttpListenerContext context, CancellationToken token)
         {
             var bytes = new byte[context.Request.ContentLength64];
-            var ms = new MemoryStream(bytes, true);
+            using var ms = new MemoryStream(bytes, true);
             await context.Request.InputStream.CopyToAsync(ms, token);
             return bytes;
         }
@@ -163,11 +158,11 @@ namespace CSDTP.Protocols.Http
         private async Task OnDataAppear(HttpResponseMessage response, IPEndPoint destination)
         {
             var resposeBytes = await response.Content.ReadAsByteArrayAsync();
-            Func<byte[], Task<bool>> replyFunc = async (data) =>
+            Func<byte[], Task<bool>> replyFunc = (data) =>
             {
-                return false;
+                return Task.FromResult(false);
             };
-            DataAppear?.Invoke(this, (destination.Address, resposeBytes, replyFunc));
+            DataAppear?.Invoke(this, new DataInfo(destination.Address, resposeBytes, replyFunc));
         }
         private void OnDataAppear(byte[] buffer, IPEndPoint endPoint, HttpListenerContext context)
         {
@@ -175,7 +170,7 @@ namespace CSDTP.Protocols.Http
             {
                 return await Reply(data, context);
             };
-            DataAppear?.Invoke(this, (endPoint.Address, buffer, replyFunc));
+            DataAppear?.Invoke(this, new DataInfo(endPoint.Address, buffer, replyFunc));
         }
 
         private async Task<bool> Reply(byte[] data, HttpListenerContext context)

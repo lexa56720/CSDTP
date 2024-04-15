@@ -1,5 +1,6 @@
 ﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Protocols;
+using CSDTP.Protocols.Communicators;
 
 namespace CSDTP.Requests
 {

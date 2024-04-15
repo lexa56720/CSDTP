@@ -1,13 +1,13 @@
 ﻿using CSDTP.Cryptography.Providers;
 using CSDTP.Packets;
 using CSDTP.Protocols;
-using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
 using System.Net;
 using AutoSerializer;
 using PerformanceUtils.Performance;
 using PerformanceUtils.Collections;
 using System.Net.Sockets;
+using CSDTP.Protocols.Communicators;
 
 namespace CSDTP.Requests
 {
@@ -24,17 +24,17 @@ namespace CSDTP.Requests
         private readonly PacketManager PacketManager;
         private readonly RequestManager RequestManager;
 
-        private readonly Dictionary<Type, Action<object, IPacketInfo, Func<byte[], Task<bool>>>> DataHandlers = new();
-        private readonly Dictionary<(Type, Type), Func<object, IPacketInfo, Func<byte[], Task<bool>>, object?>> RequestHandlers = new();
+        private readonly Dictionary<Type, Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task>> DataHandlers = new();
+        private readonly Dictionary<(Type, Type), Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task<object?>>> RequestHandlers = new();
 
         private readonly CompiledMethod PackToPacket = new(typeof(RequestManager).GetMethod(nameof(RequestManager.PackToPacket)));
-        private QueueProcessor<(IPAddress, byte[], Func<byte[], Task<bool>>)> RequestsQueue { get; set; }
+        private QueueProcessor<DataInfo> RequestsQueue { get; set; }
 
         private bool IsDisposed;
         internal Responder(ICommunicator communicator, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
         {
             Communicator = communicator;
-            RequestsQueue = new QueueProcessor<(IPAddress, byte[], Func<byte[], Task<bool>>)>(DataAppear, 32, TimeSpan.FromMilliseconds(10));
+            RequestsQueue = new QueueProcessor<DataInfo>(DataAppear, 32, TimeSpan.FromMilliseconds(10));
             PacketManager = encryptProvider == null ? new PacketManager() : new PacketManager(encryptProvider);
             if (customPacketType != null)
                 RequestManager = new RequestManager(customPacketType);
@@ -73,44 +73,43 @@ namespace CSDTP.Requests
             IsRunning = false;
         }
 
-        public bool RegisterDataHandler<TData>(Action<TData, IPacketInfo> action)
+        public bool RegisterDataHandler<TData>(Func<TData, IPacketInfo, Task> action)
         {
             return DataHandlers.TryAdd(typeof(TData),
-                                       new Action<object,
-                                       IPacketInfo, Func<byte[], Task<bool>>>((o, i, f) => action((TData)o, i)));
+                                       new Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task>(async (o, i, f) => await action((TData)o, i)));
         }
-        public bool RegisterDataHandler<TData>(Action<TData> action)
+        public bool RegisterDataHandler<TData>(Func<TData, Task> action)
         {
             return DataHandlers.TryAdd(typeof(TData),
-                                       new Action<object, IPacketInfo, Func<byte[], Task<bool>>>((o, i, f) => action((TData)o)));
+                                       new Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task>(async (o, i, f) => await action((TData)o)));
         }
-        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, TResponse?> action)
+        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, Task<TResponse?>> action)
                     where TResponse : ISerializable<TResponse>, new()
         {
             return RequestHandlers.TryAdd((typeof(TRequest),
                                           typeof(TResponse)),
-                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, object?>((o, i, f) => action((TRequest)o)));
+                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task<object?>>(async (o, i, f) => await action((TRequest)o)));
         }
-        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, IPacketInfo, TResponse?> action)
+        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, IPacketInfo, Task<TResponse?>> action)
             where TResponse : ISerializable<TResponse>, new()
         {
             return RequestHandlers.TryAdd((typeof(TRequest),
                                           typeof(TResponse)),
-                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, object?>((o, i, f) => action((TRequest)o, i)));
+                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task<object?>>(async (o, i, f) => await action((TRequest)o, i)));
         }
-        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, IPacketInfo, Func<byte[], Task<bool>>, TResponse?> action)
+        public bool RegisterRequestHandler<TRequest, TResponse>(Func<TRequest, IPacketInfo, Func<byte[], Task<bool>>, Task<TResponse?>> action)
                     where TResponse : ISerializable<TResponse>, new()
         {
             return RequestHandlers.TryAdd((typeof(TRequest),
                                           typeof(TResponse)),
-                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, object?>((o, i, f) => action((TRequest)o, i, f)));
+                                          new Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task<object?>>(async (o, i, f) => await action((TRequest)o, i, f)));
         }
 
 
-        private async Task DataAppear((IPAddress from, byte[] data, Func<byte[], Task<bool>> replyFunc) request)
+        private async Task DataAppear(DataInfo dataInfo)
         {
-            var (response, requestPacket) = HandleRequest(request.from, request.data, request.replyFunc);
-            await Reply(requestPacket, response, request.replyFunc);
+            var (response, requestPacket) = await HandleRequest(dataInfo);
+            await Reply(requestPacket, response, dataInfo.ReplyFunc);
         }
         public async Task<bool> ResponseManually<T>(IPacket<IRequestContainer> requestPacket, T responseObj, Func<byte[], Task<bool>> reply)
             where T : ISerializable<T>, new()
@@ -134,9 +133,9 @@ namespace CSDTP.Requests
             }
         }
 
-        protected (byte[]? response, IPacket<IRequestContainer>? request) HandleRequest(IPAddress from, byte[] data, Func<byte[], Task<bool>> replyFunc)
+        private async Task<(byte[]? response, IPacket<IRequestContainer>? request)> HandleRequest(DataInfo dataInfo)
         {
-            var decryptedData = PacketManager.DecryptBytes(data);
+            var decryptedData = PacketManager.DecryptBytes(dataInfo.Data);
             if (decryptedData.Length == 0)
                 return (null, null);
 
@@ -145,23 +144,23 @@ namespace CSDTP.Requests
                 return (null, null);
 
             requestPacket.ReceiveTime = DateTime.UtcNow;
-            requestPacket.Source = from;
+            requestPacket.Source = dataInfo.From;
 
 
             if (requestPacket.Data.RequestKind == RequesKind.Request && requestPacket.Data.ResponseObjType != null)
-                return (GetResponse(requestPacket, replyFunc), requestPacket);
+                return (await GetResponse(requestPacket, dataInfo.ReplyFunc), requestPacket);
 
             if (requestPacket.Data.RequestKind == RequesKind.Data && DataHandlers.TryGetValue(requestPacket.Data.DataType, out var handler))
-                handler(requestPacket.Data.DataObj, requestPacket, replyFunc);
+                await handler(requestPacket.Data.DataObj, requestPacket, dataInfo.ReplyFunc);
 
             return (null, requestPacket);
         }
-        private byte[]? GetResponse(IPacket<IRequestContainer> requestPacket, Func<byte[], Task<bool>> replyFunc)
+        private async Task<byte[]?> GetResponse(IPacket<IRequestContainer> requestPacket, Func<byte[], Task<bool>> replyFunc)
         {
             if (!RequestHandlers.TryGetValue((requestPacket.Data.DataType, requestPacket.Data.ResponseObjType), out var handler))
                 return null;
 
-            var responseData = handler(requestPacket.Data.DataObj, requestPacket, replyFunc);
+            var responseData =await handler(requestPacket.Data.DataObj, requestPacket, replyFunc);
             if (responseData == null)
                 return null;
 

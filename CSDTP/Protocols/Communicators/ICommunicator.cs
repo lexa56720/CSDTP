@@ -6,7 +6,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CSDTP.Protocols.Abstracts
+namespace CSDTP.Protocols.Communicators
 {
     internal interface ICommunicator : IDisposable
     {
@@ -15,12 +15,12 @@ namespace CSDTP.Protocols.Abstracts
 
         public int ListenPort { get; }
 
-        public IPEndPoint Destination { get; }
+        public IPEndPoint? Destination { get; }
 
-        public event EventHandler<(IPAddress from, byte[] data, Func<byte[], Task<bool>> reply)>? DataAppear;
+        public event EventHandler<DataInfo>? DataAppear;
 
         public Task<bool> SendBytes(byte[] bytes);
-        public Task<bool> SendBytes(byte[] bytes,IPEndPoint destination);
+        public Task<bool> SendBytes(byte[] bytes, IPEndPoint destination);
 
         public ValueTask Start();
 

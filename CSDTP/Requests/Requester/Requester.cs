@@ -1,9 +1,10 @@
 ﻿using CSDTP.Cryptography.Providers;
-using CSDTP.Protocols.Abstracts;
 using CSDTP.Requests.RequestHeaders;
 using System.Net;
 using AutoSerializer;
 using CSDTP.Cryptography.Algorithms;
+using CSDTP.Protocols;
+using CSDTP.Protocols.Communicators;
 
 namespace CSDTP.Requests
 {
@@ -15,8 +16,6 @@ namespace CSDTP.Requests
 
         private RequestManager RequestManager = null!;
         private PacketManager PacketManager = null!;
-
-        private IPEndPoint Destination;
 
         private bool isDisposed;
 
@@ -58,12 +57,12 @@ namespace CSDTP.Requests
             }
         }
 
-        private void ResponseAppear(object? sender, (IPAddress from, byte[] data, Func<byte[],Task<bool>> reply) e)
+        private void ResponseAppear(object? sender, DataInfo dataInfo)
         {
-            if (e.data.Length == 0)
+            if (dataInfo.Data.Length == 0)
                 return;
 
-            var decryptedData = PacketManager.DecryptBytes(e.data);
+            var decryptedData = PacketManager.DecryptBytes(dataInfo.Data);
             if (decryptedData.Length == 0)
                 return;
 
@@ -72,7 +71,7 @@ namespace CSDTP.Requests
                 return;
 
             packet.ReceiveTime = DateTime.UtcNow;
-            packet.Source = e.from;
+            packet.Source = dataInfo.From;
 
             RequestManager.ResponseAppear(packet);
         }
