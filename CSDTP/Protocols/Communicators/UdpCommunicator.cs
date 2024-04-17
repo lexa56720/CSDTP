@@ -110,7 +110,7 @@ namespace CSDTP.Protocols.Communicators
                     var data = await Client.ReceiveAsync(token);
                     OnDataAppear(data.Buffer, data.RemoteEndPoint);
                 }
-                catch (OperationCanceledException)
+                catch
                 {
                     if (IsDisposed)
                         break;
