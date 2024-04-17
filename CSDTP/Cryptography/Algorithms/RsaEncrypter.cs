@@ -17,7 +17,7 @@ namespace CSDTP.Cryptography.Algorithms
 
         public RsaEncrypter(string key)
         {
-            RSA = RSA.Create(4096);
+            RSA = RSA.Create();
             RSA.FromXmlString(key);
         }
 
