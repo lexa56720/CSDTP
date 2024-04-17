@@ -37,6 +37,14 @@ namespace PerformanceUtils.Collections
                 itemRemoved(result);
             };
         }
+        public LifeTimeDictionary(Func<TValue?, Task> itemRemoved)
+        {
+            RemoveCallback = async (keyObj, e) =>
+            {
+                TryRemove((TKey)((CustomTimer)keyObj).Obj, out var result);
+                await itemRemoved(result);
+            };
+        }
 
         public LifeTimeDictionary()
         {
@@ -86,7 +94,7 @@ namespace PerformanceUtils.Collections
                 Timers.TryAdd(key, timer);
                 timer.Start();
             }
-           
+
             return true;
         }
         public bool TryRemove(TKey key, [MaybeNullWhen(false)] out TValue result)
