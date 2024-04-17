@@ -80,7 +80,7 @@ namespace CSDTP.Requests
                 return bytes;
             var cryptedLength = BitConverter.ToInt32(bytes, 0);
 
-            var decrypter =await EncryptProvider.GetDecrypter(new ReadOnlySpan<byte>(bytes, cryptedLength, bytes.Length - cryptedLength));
+            var decrypter =await EncryptProvider.GetDecrypter(new Memory<byte>(bytes, cryptedLength, bytes.Length - cryptedLength));
             if (decrypter == null)
                 return bytes;
 

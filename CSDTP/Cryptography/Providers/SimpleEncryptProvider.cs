@@ -30,7 +30,7 @@ namespace CSDTP.Cryptography.Providers
             return;
         }
 
-        public Task<IEncrypter?> GetDecrypter(ReadOnlySpan<byte> bytes)
+        public Task<IEncrypter?> GetDecrypter(Memory<byte> bytes)
         {
             if (Decrypter != null)
                 return Task.FromResult<IEncrypter?>(Decrypter);

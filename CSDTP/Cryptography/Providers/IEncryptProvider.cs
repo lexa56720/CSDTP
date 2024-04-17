@@ -7,6 +7,6 @@ namespace CSDTP.Cryptography.Providers
     {
         public void DisposeEncrypter(IEncrypter encrypter);
         public Task<IEncrypter?> GetEncrypter(IPacketInfo responsePacket, IPacketInfo? requestPacket=null);
-        public Task<IEncrypter?> GetDecrypter(ReadOnlySpan<byte> bytes);
+        public Task<IEncrypter?> GetDecrypter(Memory<byte> bytes);
     }
 }
