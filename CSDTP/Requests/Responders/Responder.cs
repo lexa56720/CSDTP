@@ -114,7 +114,7 @@ namespace CSDTP.Requests
         public async Task<bool> ResponseManually<T>(IPacket<IRequestContainer> requestPacket, T responseObj, Func<byte[], Task<bool>> reply)
             where T : ISerializable<T>, new()
         {
-            var bytes = GetResponseBytes(requestPacket, responseObj);
+            var bytes =await GetResponseBytes(requestPacket, responseObj);
             return await Reply(requestPacket, bytes, reply);
         }
         private async Task<bool> Reply(IPacket<IRequestContainer>? requestPacket, byte[]? response, Func<byte[], Task<bool>> replyFunc)
@@ -135,7 +135,7 @@ namespace CSDTP.Requests
 
         private async Task<(byte[]? response, IPacket<IRequestContainer>? request)> HandleRequest(DataInfo dataInfo)
         {
-            var decryptedData = PacketManager.DecryptBytes(dataInfo.Data);
+            var decryptedData =await PacketManager.DecryptBytes(dataInfo.Data);
             if (decryptedData.Length == 0)
                 return (null, null);
 
@@ -164,10 +164,10 @@ namespace CSDTP.Requests
             if (responseData == null)
                 return null;
 
-            return GetResponseBytes(requestPacket, responseData);
+            return await GetResponseBytes(requestPacket, responseData);
         }
 
-        private byte[]? GetResponseBytes(IPacket<IRequestContainer> requestPacket, object responseObj)
+        private async Task<byte[]?> GetResponseBytes(IPacket<IRequestContainer> requestPacket, object responseObj)
         {
             var responseContainerType = typeof(RequestContainer<>).MakeGenericType(requestPacket.Data.ResponseObjType);
             var responseContainer = (IRequestContainer)CompiledActivator.CreateInstance(responseContainerType);
@@ -178,7 +178,7 @@ namespace CSDTP.Requests
             responseContainer.DataObj = responseObj;
 
             var responsePacket = (IPacket)PackToPacket.Invoke(RequestManager, requestPacket.Data.ResponseObjType, responseContainer, 0);
-            var encrypter = PacketManager.GetEncrypter(responsePacket, requestPacket);
+            var encrypter = await PacketManager.GetEncrypter(responsePacket, requestPacket);
             var responseBytes = PacketManager.GetBytes(responsePacket);
 
             var cryptedBytes = PacketManager.EncryptBytes(responseBytes.bytes, responseBytes.posToCrypt, encrypter);

@@ -52,11 +52,11 @@ namespace CSDTP.Requests
             var bytes = ms.ToArray();
             return (bytes, posToCrypt);
         }
-        public IEncrypter? GetEncrypter(IPacketInfo responsePacket, IPacketInfo? requestPacket = null)
+        public async Task<IEncrypter?> GetEncrypter(IPacketInfo responsePacket, IPacketInfo? requestPacket = null)
         {
             if (EncryptProvider == null)
                 return null;
-            return EncryptProvider.GetEncrypter(responsePacket, requestPacket);
+            return await EncryptProvider.GetEncrypter(responsePacket, requestPacket);
         }
         public byte[] EncryptBytes(byte[] bytes, int cryptedPos, IEncrypter? encrypter)
         {
@@ -74,13 +74,13 @@ namespace CSDTP.Requests
             return result;
         }
 
-        public byte[] DecryptBytes(byte[] bytes)
+        public async Task<byte[]> DecryptBytes(byte[] bytes)
         {
             if (EncryptProvider == null)
                 return bytes;
             var cryptedLength = BitConverter.ToInt32(bytes, 0);
 
-            var decrypter = EncryptProvider.GetDecrypter(new ReadOnlySpan<byte>(bytes, cryptedLength, bytes.Length - cryptedLength));
+            var decrypter =await EncryptProvider.GetDecrypter(new ReadOnlySpan<byte>(bytes, cryptedLength, bytes.Length - cryptedLength));
             if (decrypter == null)
                 return bytes;
 

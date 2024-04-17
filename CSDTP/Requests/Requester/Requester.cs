@@ -57,12 +57,12 @@ namespace CSDTP.Requests
             }
         }
 
-        private void ResponseAppear(object? sender, DataInfo dataInfo)
+        private async void ResponseAppear(object? sender, DataInfo dataInfo)
         {
             if (dataInfo.Data.Length == 0)
                 return;
 
-            var decryptedData = PacketManager.DecryptBytes(dataInfo.Data);
+            var decryptedData =await PacketManager.DecryptBytes(dataInfo.Data);
             if (decryptedData.Length == 0)
                 return;
 
@@ -82,7 +82,7 @@ namespace CSDTP.Requests
             var container = RequestManager.PackToContainer(data);
             container.RequestKind = RequesKind.Data;
             var packet = RequestManager.PackToPacket(container, -1);
-            var encrypter = PacketManager.GetEncrypter(packet);
+            var encrypter = await PacketManager.GetEncrypter(packet);
             var packetBytes = PacketManager.GetBytes(packet);
 
             var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, encrypter);
@@ -99,7 +99,7 @@ namespace CSDTP.Requests
                 container.RequestKind = RequesKind.Request;
                 container.ResponseObjType = typeof(TResponse);
                 var packet = RequestManager.PackToPacket(container, ReplyPort);
-                var encrypter = PacketManager.GetEncrypter(packet);
+                var encrypter =await PacketManager.GetEncrypter(packet);
                 var packetBytes = PacketManager.GetBytes(packet);
 
                 var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, encrypter);

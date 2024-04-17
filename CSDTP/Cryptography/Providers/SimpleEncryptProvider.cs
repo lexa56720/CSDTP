@@ -9,7 +9,7 @@ namespace CSDTP.Cryptography.Providers
         {
             Encrypter = encrypter;
         }
-        public SimpleEncryptProvider(IEncrypter encrypter,IEncrypter decrypter)
+        public SimpleEncryptProvider(IEncrypter encrypter, IEncrypter decrypter)
         {
             Encrypter = encrypter;
             Decrypter = decrypter;
@@ -30,16 +30,16 @@ namespace CSDTP.Cryptography.Providers
             return;
         }
 
-        public IEncrypter? GetDecrypter(ReadOnlySpan<byte> bytes)
+        public Task<IEncrypter?> GetDecrypter(ReadOnlySpan<byte> bytes)
         {
             if (Decrypter != null)
-                return Decrypter;
-            return Encrypter;
+                return Task.FromResult<IEncrypter?>(Decrypter);
+            return Task.FromResult<IEncrypter?>(Encrypter);
         }
 
-        public IEncrypter? GetEncrypter(IPacketInfo responsePacket, IPacketInfo? requestPacket = null)
+        public Task<IEncrypter?> GetEncrypter(IPacketInfo responsePacket, IPacketInfo? requestPacket = null)
         {
-            return Encrypter;
+            return Task.FromResult<IEncrypter?>(Encrypter);
         }
     }
 }

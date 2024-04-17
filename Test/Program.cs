@@ -92,7 +92,7 @@ namespace Test
             var protocol = Protocol.Http;
             using var responder = ResponderFactory.Create(crypter, typeof(ShitPacket<>), protocol);
             responder.RegisterRequestHandler<Message, Message>(Modify);
-            responder.Start();
+            await responder.Start();
 
 
             using var requester = await RequesterFactory.Create(new IPEndPoint(IPAddress.Loopback, responder.ListenPort), port, crypter, typeof(ShitPacket<>), protocol);
