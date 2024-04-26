@@ -1,5 +1,4 @@
-﻿using Open.Nat;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -33,22 +32,6 @@ namespace CSDTP.Utils
             return ports.ElementAt(Random.Next(0, ports.Count()));
         }
 
-        public static async Task<bool> PortForward(int port, string mappingName, bool isTcp = false)
-        {
-            try
-            {
-                var discoverer = new NatDiscoverer();
-                var cts = new CancellationTokenSource(10000);
-                var device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
-                var mapping = new Mapping(isTcp ? Protocol.Tcp : Protocol.Udp, port, port, mappingName);
-                await device.CreatePortMapAsync(mapping);
-            }
-            catch
-            {
-                return false;
-            }
-            return true;
-        }
 
         [SupportedOSPlatform("windows")]
         public static async Task ModifyHttpSettings(int port, bool isAdd)
@@ -70,22 +53,6 @@ namespace CSDTP.Utils
             var proc = Process.Start(procInfo);
             if (proc != null)
                 await proc.WaitForExitAsync();
-        }
-
-        public static async Task<bool> PortBackward(int port, string name, bool isTcp = false)
-        { 
-            try
-            {
-                var discoverer = new NatDiscoverer();
-                var cts = new CancellationTokenSource(10000);
-                var device = await discoverer.DiscoverDeviceAsync(PortMapper.Upnp, cts);
-                await device.DeletePortMapAsync(await device.GetSpecificMappingAsync(isTcp ? Protocol.Tcp : Protocol.Udp, port));
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
         }
     }
 }

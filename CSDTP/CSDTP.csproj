@@ -12,10 +12,4 @@
     <ProjectReference Include="..\PerformanceUtils\PerformanceUtils.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Open.Nat">
-      <HintPath>Lib\Open.Nat.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>
