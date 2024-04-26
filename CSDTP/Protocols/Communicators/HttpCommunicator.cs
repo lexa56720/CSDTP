@@ -159,18 +159,18 @@ namespace CSDTP.Protocols.Communicators
         private async Task OnDataAppear(HttpResponseMessage response, IPEndPoint destination)
         {
             var resposeBytes = await response.Content.ReadAsByteArrayAsync();
-            Func<byte[], Task<bool>> replyFunc = (data) =>
+            static Task<bool> replyFunc(byte[] data)
             {
                 return Task.FromResult(false);
-            };
+            }
             DataAppear?.Invoke(this, new DataInfo(destination.Address, resposeBytes, replyFunc));
         }
         private void OnDataAppear(byte[] buffer, IPEndPoint endPoint, HttpListenerContext context)
         {
-            Func<byte[], Task<bool>> replyFunc = async (data) =>
+            async Task<bool> replyFunc(byte[] data)
             {
                 return await Reply(data, context);
-            };
+            }
             DataAppear?.Invoke(this, new DataInfo(endPoint.Address, buffer, replyFunc));
         }
 

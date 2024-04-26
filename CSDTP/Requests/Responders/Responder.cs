@@ -14,10 +14,9 @@ namespace CSDTP.Requests
     public class Responder : IDisposable
     {
         public required Protocol Protocol { get; init; }
-
-        private readonly TimeSpan SenderLifeTime = TimeSpan.FromSeconds(60);
         public int ListenPort => Communicator.ListenPort;
         public bool IsRunning { get; private set; }
+        public bool ResponseIfNull { get; set; } = false;
 
         private readonly ICommunicator Communicator;
 
@@ -114,7 +113,7 @@ namespace CSDTP.Requests
         public async Task<bool> ResponseManually<T>(IPacket<IRequestContainer> requestPacket, T responseObj, Func<byte[], Task<bool>> reply)
             where T : ISerializable<T>, new()
         {
-            var bytes =await GetResponseBytes(requestPacket, responseObj);
+            var bytes = await GetResponseBytes(requestPacket, responseObj);
             return await Reply(requestPacket, bytes, reply);
         }
         private async Task<bool> Reply(IPacket<IRequestContainer>? requestPacket, byte[]? response, Func<byte[], Task<bool>> replyFunc)
@@ -126,16 +125,18 @@ namespace CSDTP.Requests
 
             if (response != null)
                 return await replyFunc(response);
-            else
+
+            if (response == null && ResponseIfNull)
             {
                 await replyFunc([]);
                 return false;
             }
+            return false;
         }
 
         private async Task<(byte[]? response, IPacket<IRequestContainer>? request)> HandleRequest(DataInfo dataInfo)
         {
-            var decryptedData =await PacketManager.DecryptBytes(dataInfo.Data);
+            var decryptedData = await PacketManager.DecryptBytes(dataInfo.Data);
             if (decryptedData.Length == 0)
                 return (null, null);
 
@@ -160,7 +161,7 @@ namespace CSDTP.Requests
             if (!RequestHandlers.TryGetValue((requestPacket.Data.DataType, requestPacket.Data.ResponseObjType), out var handler))
                 return null;
 
-            var responseData =await handler(requestPacket.Data.DataObj, requestPacket, replyFunc);
+            var responseData = await handler(requestPacket.Data.DataObj, requestPacket, replyFunc);
             if (responseData == null)
                 return null;
 

@@ -123,12 +123,10 @@ namespace CSDTP.Protocols.Communicators
 
         private void OnDataAppear(byte[] buffer, IPEndPoint endPoint)
         {
-            Func<byte[], Task<bool>> replyFunc = async (data) =>
+            async Task<bool> replyFunc(byte[] data)
             {
-                if (data.Length > 0)
-                    return await SendBytes(data, endPoint);
-                return false;
-            };
+                return await SendBytes(data, endPoint);
+            }
             DataAppear?.Invoke(this, new DataInfo(endPoint.Address, buffer, replyFunc));
         }
     }
