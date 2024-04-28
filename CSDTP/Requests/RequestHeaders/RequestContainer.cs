@@ -47,24 +47,18 @@ namespace CSDTP.Requests.RequestHeaders
         {
             var id = new Guid(reader.ReadBytes(16));
             var requestType = (RequesKind)reader.ReadByte();
+            var result = new RequestContainer<T>(T.Deserialize(reader), id, requestType);
             if (requestType == RequesKind.Request)
             {
-                var resposeObjType = GlobalByteDictionary<Type>.Get(reader.ReadByteArray(),
-                                                                    b => Type.GetType(Compressor.Decompress(b)));
-                return new RequestContainer<T>(T.Deserialize(reader), id, requestType)
-                {
-                    ResponseObjType = resposeObjType
-                };
+                result.ResponseObjType = typeof(T);
             }
-            return new RequestContainer<T>(T.Deserialize(reader), id, requestType);
+            return result;
         }
 
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Id.ToByteArray());
             writer.Write((byte)RequestKind);
-            if (RequestKind == RequesKind.Request)
-                writer.WriteBytes(Compressor.Compress(ResponseObjType.AssemblyQualifiedName));
             Data.Serialize(writer);
         }
     }
