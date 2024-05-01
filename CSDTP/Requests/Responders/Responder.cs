@@ -26,7 +26,7 @@ namespace CSDTP.Requests
         private readonly Dictionary<Type, Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task>> DataHandlers = new();
         private readonly Dictionary<(Type, Type), Func<object, IPacketInfo, Func<byte[], Task<bool>>, Task<object?>>> RequestHandlers = new();
 
-        private readonly CompiledMethod PackToPacket = new(typeof(RequestManager).GetMethod(nameof(RequestManager.PackToPacket)));
+        private readonly CompiledMethod PackToPacket = new(typeof(RequestManager).GetMethods().Single(m=>m.Name== nameof(RequestManager.PackToPacket) && m.GetGenericArguments().Length==1));
         private QueueProcessor<DataInfo> RequestsQueue { get; set; }
 
         private bool IsDisposed;

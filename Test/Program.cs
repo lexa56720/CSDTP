@@ -36,7 +36,7 @@ namespace Test
     {
         public static Protocol protocol = Protocol.Http;
         static async Task Main(string[] args)
-        {
+       {
 
 
             Serializer.SerializerProvider = new SerializerProvider();
@@ -91,7 +91,7 @@ namespace Test
             var port = 250;
             var protocol = Protocol.Http;
             using var responder = ResponderFactory.Create(crypter, typeof(ShitPacket<>), protocol);
-            responder.RegisterRequestHandler<Message, Message>(Modify);
+            responder.RegisterRequestHandler<Message, MessageResp>(Modify);
             await responder.Start();
 
 
@@ -108,8 +108,11 @@ namespace Test
                 // if (requester.Requests.Count < 50)
                 // requester.PostAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(2000)).ContinueWith(e=>Interlocked.Increment(ref count));
 
-                var result = requester.RequestAsync<Message, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
-                                                                            .ContinueWith(e => Interlocked.Increment(ref count));
+                var result = requester.RequestAsync<MessageResp, Message>(new Message("HI WORLD !"), TimeSpan.FromSeconds(5))
+                                                                            .ContinueWith(e => 
+                                                                            {
+                                                                                Interlocked.Increment(ref count);
+                                                                            });
                 //Interlocked.Increment(ref sended);
                 //Console.WriteLine(result.Text);
                 if (stopwatch.ElapsedMilliseconds > globalCount * 500)
@@ -129,10 +132,10 @@ namespace Test
         }
 
         static int counter = 0;
-        static async Task<Message> Modify(Message msg, IPacketInfo info)
+        static async Task<MessageResp> Modify(Message msg, IPacketInfo info)
         {
             //Thread.Sleep(100);
-            var response = new Message(msg.Text + " " + Interlocked.Increment(ref counter));
+            var response = new MessageResp(msg.Text + " " + Interlocked.Increment(ref counter));
             return response;
         }
         static void ModifyGet(Message msg, IPacketInfo info)

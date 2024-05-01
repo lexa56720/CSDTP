@@ -18,4 +18,19 @@ namespace Test
             Text = "";
         }
     }
+    internal class MessageResp : ISerializable<MessageResp>
+    {
+        public string Text { get; set; }
+
+        public byte[] data { get; set; } = [];
+        public MessageResp(string text)
+        {
+            Text = text;
+        }
+
+        public MessageResp()
+        {
+            Text = "";
+        }
+    }
 }

@@ -15,7 +15,7 @@
 
         public object DataObj { get; set; }
 
-        public Type? ResponseObjType { get; set; }
+        public Type? ResponseObjType { get; }
 
         public RequesKind RequestKind { get; set; }
 
