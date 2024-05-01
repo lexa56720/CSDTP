@@ -13,12 +13,7 @@ namespace SourceGeneratorSourceGenerator
     {
         public SourceGenerator()
         {
-//#if DEBUG
-//            if (!Debugger.IsAttached)
-//            {
-//                Debugger.Launch();
-//            }
-//#endif
+
         }
 
         public void Execute(GeneratorExecutionContext context)
@@ -182,9 +177,7 @@ namespace SourceGeneratorSourceGenerator
 
         public void Initialize(GeneratorInitializationContext context)
         {
-            // context.RegisterForSyntaxNotifications(() => new RecordSyntaxReceiver());
 
-            // Initialization logic can be added here if needed.
         }
     }
 }

@@ -1,13 +1,9 @@
 ﻿namespace AutoSerializer
 {
-    public class AutoSerializeAtribute : Attribute
-    {
-    }
     public interface ISerializer
     {
         public void SerializePartial<T>(ISerializable<T> obj, BinaryWriter writer) where T : new();
         public void DeserializePartial(BinaryReader reader, ref object result);
-
     }
     public static class Serializer
     {
