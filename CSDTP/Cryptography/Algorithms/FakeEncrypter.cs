@@ -2,7 +2,6 @@
 {
     public class FakeEncrypter : IEncrypter
     {
-        public CryptMethod CryptMethod => CryptMethod.None;
         public bool IsDisposed { get; private set; }
 
         public byte[] Crypt(byte[] data)

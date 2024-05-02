@@ -5,9 +5,6 @@ namespace CSDTP.Cryptography.Algorithms
     public class RsaEncrypter : IEncrypter
     {
         private RSA RSA { get; set; }
-
-        public CryptMethod CryptMethod => CryptMethod.Rsa;
-
         public bool IsDisposed { get; private set; }
 
         public RsaEncrypter()

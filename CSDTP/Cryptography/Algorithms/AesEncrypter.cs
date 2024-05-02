@@ -6,8 +6,6 @@ namespace CSDTP.Cryptography.Algorithms
     {
         public byte[] Key { get; set; }
 
-        public CryptMethod CryptMethod => CryptMethod.Aes;
-
         public bool IsDisposed { get; private set; }
 
         public AesEncrypter()

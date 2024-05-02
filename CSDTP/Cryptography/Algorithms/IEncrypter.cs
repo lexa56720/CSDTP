@@ -1,15 +1,8 @@
 ﻿namespace CSDTP.Cryptography.Algorithms
 {
-    public enum CryptMethod
-    {
-        None,
-        Rsa,
-        Aes,
-    }
+
     public interface IEncrypter : IDisposable
     {
-        public CryptMethod CryptMethod { get; }
-
         public bool IsDisposed { get; }
 
         public byte[] Crypt(byte[] data);

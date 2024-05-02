@@ -136,21 +136,25 @@ namespace CSDTP.Requests
 
         private async Task<(byte[]? response, IPacket<IRequestContainer>? request)> HandleRequest(DataInfo dataInfo)
         {
+            //Расшифровка байтов
             var decryptedData = await PacketManager.DecryptBytes(dataInfo.Data);
             if (decryptedData.Length == 0)
                 return (null, null);
 
+            //Десериализация пакета
             var requestPacket = PacketManager.GetPacketFromBytes(decryptedData);
             if (requestPacket == null)
                 return (null, null);
 
+            //Установка информации о пакете
             requestPacket.ReceiveTime = DateTime.UtcNow;
             requestPacket.Source = dataInfo.From;
 
-
+            //Получение объекта ответа, если запрос предполагает ответ
             if (requestPacket.Data.RequestKind == RequesKind.Request && requestPacket.Data.ResponseObjType != null)
                 return (await GetResponse(requestPacket, dataInfo.ReplyFunc), requestPacket);
 
+            //Передача запроса методу, если ответ не предполагается
             if (requestPacket.Data.RequestKind == RequesKind.Data && DataHandlers.TryGetValue(requestPacket.Data.DataType, out var handler))
                 await handler(requestPacket.Data.DataObj, requestPacket, dataInfo.ReplyFunc);
 

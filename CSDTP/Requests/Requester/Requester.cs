@@ -22,7 +22,7 @@ namespace CSDTP.Requests
         private Requester(ICommunicator communicator)
         {
             Communicator = communicator;
-            Communicator.DataAppear +=ResponseAppear;
+            Communicator.DataAppear += ResponseAppear;
         }
 
         internal static async Task<Requester> Initialize(ICommunicator communicator, IEncryptProvider? encryptProvider = null, Type? customPacketType = null)
@@ -62,7 +62,7 @@ namespace CSDTP.Requests
             if (dataInfo.Data.Length == 0)
                 return;
 
-            var decryptedData =await PacketManager.DecryptBytes(dataInfo.Data);
+            var decryptedData = await PacketManager.DecryptBytes(dataInfo.Data);
             if (decryptedData.Length == 0)
                 return;
 
@@ -95,24 +95,35 @@ namespace CSDTP.Requests
         {
             try
             {
+                //Упаковка объекта в контейнер
                 var container = RequestManager.PackToContainer<TResponse, TRequest>(data);
-                container.RequestKind = RequesKind.Request;
-                container.ResponseObjType = typeof(TResponse);
+                container.RequestKind = RequesKind.Request; //Тип запроса
+
+                //Упаковка запроса в пакет
                 var packet = RequestManager.PackToPacket(container, ReplyPort);
-                var encrypter =await PacketManager.GetEncrypter(packet);
+
+                //Получение объекта шифровальщика
+                var encrypter = await PacketManager.GetEncrypter(packet);
+
+                //Сериализация пакета в массив байтов
                 var packetBytes = PacketManager.GetBytes(packet);
 
+                //Шифрование байтов пакета
                 var cryptedPacketBytes = PacketManager.EncryptBytes(packetBytes.bytes, packetBytes.posToCrypt, encrypter);
 
+                //Добавление контенера в список ожидающих ответа
                 if (!RequestManager.AddRequest(container))
                     return default;
 
+                //Отправка байтов пакета
                 await Communicator.SendBytes(cryptedPacketBytes);
-                var responsePacket = await RequestManager.GetResponseAsync(container, timeout, token);
 
+                //Ожидание ответа
+                var responsePacket = await RequestManager.GetResponseAsync(container, timeout, token);
                 if (responsePacket == null)
                     return default;
 
+                //Возврат объекта ответа
                 return (TResponse)responsePacket.Data.DataObj;
             }
             catch
